@@ -63,11 +63,7 @@ const mockProduct = {
   },
 }
 
-interface ProductPageProps {
-  params: { id: string }
-}
-
-export default function ProductPage({ params }: ProductPageProps) {
+export default function ProductPage({ params }: { params: { id: string } }) {
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const { addItem } = useCart()
