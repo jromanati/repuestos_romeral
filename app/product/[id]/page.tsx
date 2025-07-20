@@ -1,5 +1,6 @@
 "use client"
 
+import { useParams } from "next/navigation"
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
@@ -62,9 +63,16 @@ const mockProduct = {
     "Resistencia al agua": "IP67",
   },
 }
-
+interface PageProps {
+  params: {
+    id: string;
+  };
+}
 // @ts-ignore
-export default function ProductPage({ params }: { params: { id: string } }) {
+// export default function ProductPage({ params }: PageProps) {
+export default function ProductPage() {
+  const params = useParams()
+  const id = params.id as string
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const { addItem } = useCart()

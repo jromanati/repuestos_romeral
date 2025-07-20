@@ -11,7 +11,7 @@ interface Filters {
   category: string
   brand: string
   model: string
-  priceRange: number[]
+  priceRange: [number, number]
   in_stock: boolean
   sortBy: string
 }
@@ -23,7 +23,6 @@ interface ProductFiltersProps {
 
 const categories = [
   { value: "all", label: "Todas las categorías" },
-  { value: 2, label: "Primera Categoria" },
   { value: "frenos", label: "Frenos" },
   { value: "suspension", label: "Suspensión" },
   { value: "audio", label: "Audio" },
