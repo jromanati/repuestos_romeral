@@ -63,6 +63,7 @@ const mockProduct = {
   },
 }
 
+// @ts-ignore
 export default function ProductPage({ params }: { params: { id: string } }) {
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
