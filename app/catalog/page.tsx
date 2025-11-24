@@ -76,7 +76,7 @@ export default function CatalogPage() {
     }
   }
   const { data, isLoading, error, mutate } = useSWR<{ products: any[]; categories: any[]; brands: any[] }>(
-    getProducts ? "catalog" : null,
+    typeof getProducts === "function" ? "catalog" : null,
     fetchProducts,
     {
       revalidateOnFocus: false,
