@@ -54,7 +54,7 @@ export interface Order {
     url: string
     token: string
   }
-  payment_id?: string | null
+  payment_id?: string | null | undefined
 }
 
 export interface PaymentRequest {

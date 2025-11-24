@@ -175,7 +175,8 @@ export default function CartPage() {
       }
       const response = await createOrder(newCreateOrderPayload)
       if (response && response.data_web_pay) {
-        localStorage.setItem("payment_id", response.payment_id)
+        // Ensure we always store a string in localStorage (avoid undefined/null)
+        localStorage.setItem("payment_id", String(response.payment_id ?? ""))
         if (response.data_web_pay.url && response.data_web_pay.token) {
           window.location.href = `${response.data_web_pay.url}?token_ws=${response.data_web_pay.token}`
           return
