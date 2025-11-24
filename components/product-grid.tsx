@@ -19,9 +19,15 @@ interface Product {
   category: string
   brand: string
   model: string
-  inStock: boolean
+  in_stock: boolean
   badge?: string
   badgeColor?: string
+  brand_data: {
+    id: number
+    name: string
+  }
+  sku: string
+
 }
 
 interface ProductGridProps {
