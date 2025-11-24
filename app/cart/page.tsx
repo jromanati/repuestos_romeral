@@ -174,7 +174,7 @@ export default function CartPage() {
         status_url: statusUrl,
       }
       const response = await createOrder(newCreateOrderPayload)
-      if (response.data_web_pay) {
+      if (response && response.data_web_pay) {
         localStorage.setItem("payment_id", response.payment_id)
         if (response.data_web_pay.url && response.data_web_pay.token) {
           window.location.href = `${response.data_web_pay.url}?token_ws=${response.data_web_pay.token}`
