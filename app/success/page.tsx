@@ -28,13 +28,17 @@ export default function PagoResultado() {
       }
       else {
         const response = await checkPaymentStatus(paymentId)
-        const dataWebPay = response.data_web_pay
-        if (dataWebPay) {
-          setStatus(dataWebPay.status)
+        if (response && response.data_web_pay) {
+          const dataWebPay = response.data_web_pay
+          if (dataWebPay) {
+            setStatus(dataWebPay.status)
+          }
+          else{
+            setStatus("FAILED")
+          }
+
         }
-        else{
-          setStatus("FAILED")
-        }
+        
         clear();
         localStorage.setItem("payment_id", "")
         // setTimeout(() => {

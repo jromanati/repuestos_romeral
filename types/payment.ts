@@ -83,6 +83,11 @@ export interface PaymentStatus {
   currency: string
   processedAt?: string
   errorMessage?: string
+  data_web_pay?: {
+    url: string
+    token: string
+    status: string
+  }
 }
 
 /** Métodos de pago aceptados por el backend */
@@ -131,16 +136,6 @@ export interface CreateOrderResponse {
   updated_at: string
 }
 
-export interface PaymentStatus {
-  paymentId: string
-  orderId: string
-  status: "pending" | "approved" | "rejected" | "cancelled"
-  transactionId?: string
-  amount: number
-  currency: string
-  processedAt?: string
-  errorMessage?: string
-}
 
 
 export interface CreateReviewOrder {

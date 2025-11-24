@@ -120,7 +120,9 @@ function RevisionOrdenContent() {
         const data = await getOrderRef.current(orderId)
         if (cancelled) return
         if (data) {
-          setOrderData(data)
+          // for now assert the returned Order fits OrderData; if the API shape differs,
+          // map/transform fields here to build a proper OrderData object instead of casting.
+          setOrderData(data as unknown as OrderData)
           localStorage.setItem("order_data", JSON.stringify(data))
         } else {
           setError(true)
