@@ -45,6 +45,12 @@ export interface Product {
 }
 
 export interface ProductResponse extends Product {
+  data: {
+    products: [],
+    categories: [],
+    brands: [],
+
+  }
   category_name: string
   category_path: string
   in_stock: boolean

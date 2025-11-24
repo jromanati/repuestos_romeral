@@ -61,21 +61,21 @@ export default function CatalogPage() {
   const mapCategory = (c: any) => ({ ...c })
   const mapBrand = (b: any) => ({ ...b })
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (): Promise<{ products: any[]; categories: any[]; brands: any[] }> => {
     const isAuthenticated = await ProductService.ensureAuthenticated()
-    if (!isAuthenticated) return []
+    if (!isAuthenticated) return { products: [], categories: [], brands: [] }
 
     const resp = await getProducts()
-    const rawProducts = resp?.data.products ?? resp?.data?.products ?? []
-    const rawCategories = resp?.data.categories ?? resp?.data?.categories ?? []
-    const rawBrands = resp?.data.brands ?? resp?.data?.brands ?? []
+    const rawProducts = resp?.data?.products ?? []
+    const rawCategories = resp?.data?.categories ?? []
+    const rawBrands = resp?.data?.brands ?? []
     return {
       products: rawProducts.map(mapProduct),
       categories: rawCategories.map(mapCategory),
       brands: rawBrands.map(mapBrand),
     }
   }
-  const { data, isLoading, error, mutate } = useSWR(
+  const { data, isLoading, error, mutate } = useSWR<{ products: any[]; categories: any[]; brands: any[] }>(
     getProducts ? "catalog" : null,
     fetchProducts,
     {
