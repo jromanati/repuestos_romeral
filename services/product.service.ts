@@ -61,7 +61,6 @@ export class ProductService {
   // Obtener producto por ID
   static async getProduct(id: number): Promise<ApiResponse<Product>> {
     return apiClient.get<Product>(`products/${id}/update`)
-    // return apiClient.get(`payments/prueba/`)
   }
 
   // Buscar productos
