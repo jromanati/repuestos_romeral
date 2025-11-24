@@ -50,6 +50,11 @@ export interface Order {
   updatedAt: string
   trackingNumber?: string
   notes?: string
+  data_web_pay?: {
+    url: string
+    token: string
+  }
+  payment_id?: string | null
 }
 
 export interface PaymentRequest {
