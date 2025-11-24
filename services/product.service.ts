@@ -55,12 +55,12 @@ export class ProductService {
         {} as Record<string, string>,
       ),
     })
-    return apiClient.get<ProductsResponse>(`products?${params}`)
+    return apiClient.get<ProductsResponse>(`catalog`)
   }
 
   // Obtener producto por ID
   static async getProduct(id: number): Promise<ApiResponse<Product>> {
-    return apiClient.get<Product>(`/products/${id}`)
+    return apiClient.get<Product>(`products/${id}/update`)
     // return apiClient.get(`payments/prueba/`)
   }
 

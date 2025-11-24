@@ -6,14 +6,23 @@ import ProductGrid from "@/components/product-grid"
 import { ProductService } from "@/services/product.service"
 import ProductFilters from "@/components/product-filters"
 import useSWR from 'swr'
+import { useProduct, useCatalogUpdates } from "@/hooks/use-products"
+import { Filter, Grid3x3, List } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export default function CatalogPage() {
+  useCatalogUpdates();
   const searchParams = useSearchParams()
+  const searchQuery = searchParams.get("search")?.toLowerCase() ?? ""
   const [showFilters, setShowFilters] = useState(false)
+  const { getProducts } = useProduct()
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 12
 
   interface Filters {
-    category: string
-    brand: string
+    selectedCategories: string[]
+    selectedBrands: string[]
     model: string
     priceRange: [number, number]
     in_stock: boolean
@@ -23,127 +32,109 @@ export default function CatalogPage() {
   const [filters, setFilters] = useState<Filters>(() => {
     const categoryFromUrl = searchParams.get("category")
     return {
-      category: categoryFromUrl || "all",
-      brand: "all",
+      selectedCategories: [],
+      selectedBrands: [],
       model: "",
       priceRange: [0, 500000],
       in_stock: false,
       sortBy: "name",
     }
   })
+  const PLACEHOLDER = "/placeholder.svg?height=300&width=300"
 
-  // const fetchProducts = async () => {
-  //   const isAuthenticated = await ProductService.ensureAuthenticated()
-  //   if (!isAuthenticated) return []
+  const firstImageUrl = (images?: any[]): string | undefined => {
+    if (!Array.isArray(images) || images.length === 0) return undefined
+    const first = images[0]
+    return typeof first === "string" ? first : (first?.url || first?.secure_url || first?.path)
+  }
 
-  //   const productsResponse = await ProductService.getProducts()
-  //   const fetchedProducts = productsResponse.data || []
+  const mapProduct = (product: any) => {
+    const image = product?.main_image || firstImageUrl(product?.images) || PLACEHOLDER
+    return {
+      ...product,
+      image,
+      features: product?.features ?? [],
+      in_stock: product?.in_stock ?? true,
+    }
+  }
 
-  //   return fetchedProducts.map((product: any) => ({
-  //     ...product,
-  //     image: product.main_image ?? "/placeholder.svg?height=300&width=300",
-  //   }))
-  // }
+  const mapCategory = (c: any) => ({ ...c })
+  const mapBrand = (b: any) => ({ ...b })
 
-  // const { data: products = [], isLoading } = useSWR('products', fetchProducts)
-  
-  // Simulación de carga, reemplazar con SWR o fetch real
-  const isLoading = false 
-  const products = [
+  const fetchProducts = async () => {
+    const isAuthenticated = await ProductService.ensureAuthenticated()
+    if (!isAuthenticated) return []
+
+    const resp = await getProducts()
+    const rawProducts = resp?.data.products ?? resp?.data?.products ?? []
+    const rawCategories = resp?.data.categories ?? resp?.data?.categories ?? []
+    const rawBrands = resp?.data.brands ?? resp?.data?.brands ?? []
+    return {
+      products: rawProducts.map(mapProduct),
+      categories: rawCategories.map(mapCategory),
+      brands: rawBrands.map(mapBrand),
+    }
+  }
+  const { data, isLoading, error, mutate } = useSWR(
+    getProducts ? "catalog" : null,
+    fetchProducts,
     {
-      id: 1,
-      name: "Kit de Luces LED H4 6000K",
-      price: 45990,
-      originalPrice: 59990,
-      rating: 4.8,
-      reviews: 124,
-      image: "/placeholder.svg?height=300&width=300",
-      category: "luces",
-      brand: "Philips",
-      model: "Universal",
-      in_stock: true,
-      badge: "Oferta",
-      badgeColor: "bg-red-500",
-    },
-    {
-      id: 2,
-      name: "Pastillas de Freno Brembo Premium",
-      price: 89990,
-      rating: 4.9,
-      reviews: 89,
-      image: "/placeholder.svg?height=300&width=300",
-      category: "frenos",
-      brand: "Brembo",
-      model: "Toyota Corolla",
-      in_stock: true,
-      badge: "Más Vendido",
-      badgeColor: "bg-green-500",
-    },
-    {
-      id: 3,
-      name: "Radio Pioneer Bluetooth USB",
-      price: 129990,
-      rating: 4.7,
-      reviews: 156,
-      image: "/placeholder.svg?height=300&width=300",
-      category: "audio",
-      brand: "Pioneer",
-      model: "Universal",
-      in_stock: true,
-      badge: "Nuevo",
-      badgeColor: "bg-blue-500",
-    },
-    {
-      id: 4,
-      name: "Amortiguadores Monroe Gas-Matic",
-      price: 199990,
-      originalPrice: 249990,
-      rating: 4.6,
-      reviews: 67,
-      image: "/placeholder.svg?height=300&width=300",
-      category: "suspension",
-      brand: "Monroe",
-      model: "Nissan Sentra",
-      in_stock: false,
-      badge: "Oferta",
-      badgeColor: "bg-red-500",
-    },
-    {
-      id: 5,
-      name: 'Llantas Deportivas 17" Aleación',
-      price: 320000,
-      rating: 4.5,
-      reviews: 43,
-      image: "/placeholder.svg?height=300&width=300",
-      category: "llantas",
-      brand: "OZ Racing",
-      model: "Universal",
-      in_stock: true,
-    },
-    {
-      id: 6,
-      name: "Filtro de Aire K&N Performance",
-      price: 65990,
-      rating: 4.7,
-      reviews: 98,
-      image: "/placeholder.svg?height=300&width=300&N+air+filter=",
-      category: "motor",
-      brand: "K&N",
-      model: "Honda Civic",
-      in_stock: true,
-    },
-  ]
+      revalidateOnFocus: false,
+      shouldRetryOnError: false,
+      onSuccess: (d) => console.log("SWR onSuccess catalog:", d),
+      onError: (e) => console.error("SWR onError catalog:", e),
+    }
+  )
+  const products = data?.products ?? []
+  const categories = data?.categories ?? []
+  const brands = data?.brands ?? []
 
   const filteredProducts = useMemo(() => {
     if (!products || products.length === 0) return []
     let filtered = [...products]
-
-    if (filters.category && filters.category !== "all") {
-      filtered = filtered.filter((product) => product.category === filters.category)
+    let filteredCategories = []
+    filteredCategories = [...categories]
+    const search = localStorage.getItem("search_product")
+    if (search) {
+      const searchLower = search.toLowerCase()
+      filteredCategories = filteredCategories.filter((category) =>
+        category.name.toLowerCase().includes(searchLower)
+      )
+      const categoryIdsForProducts = new Set<number | string>()
+      filteredCategories.forEach((category) => {
+        if (category.parent === null) {
+          if (category.subcategories && category.subcategories.length > 0) {
+            category.subcategories.forEach((sub) => {
+              categoryIdsForProducts.add(sub.id)
+            })
+          }
+        } else {
+          categoryIdsForProducts.add(category.id)
+        }
+      })
+      if (categoryIdsForProducts.size > 0) {
+        filtered = filtered.filter((product) =>
+          categoryIdsForProducts.has(product.category)
+        )
+      }
+      if (categoryIdsForProducts.size === 0) {
+        filtered = filtered.filter((product) =>
+          product.name.toLowerCase().includes(searchLower)
+        )
+      }
+      console.log("Category IDs for Products:", categoryIdsForProducts)
     }
 
-    if (filters.brand && filters.brand !== "all") {
-      filtered = filtered.filter((product) => product.brand === filters.brand)
+    
+    if (filters.selectedCategories && filters.selectedCategories.length > 0) {
+      filtered = filtered.filter((product) =>
+        filters.selectedCategories.includes(product.category)
+      )
+    }
+    if (filters.selectedBrands && filters.selectedBrands.length > 0) {
+      filtered = filtered.filter((product) =>
+        filters.selectedBrands.includes(product.brand)
+      )
     }
 
     if (filters.model) {
@@ -162,6 +153,8 @@ export default function CatalogPage() {
       filtered = filtered.filter((product) => product.in_stock)
     }
 
+    
+
     switch (filters.sortBy) {
       case "price-low":
         filtered.sort((a, b) => a.price - b.price)
@@ -179,7 +172,17 @@ export default function CatalogPage() {
     }
 
     return filtered
-  }, [products, filters])
+  }, [products, filters, searchQuery])
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -200,18 +203,93 @@ export default function CatalogPage() {
         <p className="text-gray-600 py-4">
           {isLoading ? "Cargando productos..." : `${filteredProducts.length} productos encontrados`}
         </p>
+        
         <div className="flex gap-8">
           <div className={`${showFilters ? "block" : "hidden"} md:block w-full md:w-64 flex-shrink-0`}>
-            <ProductFilters filters={filters} onFiltersChange={setFilters} />
+            <ProductFilters filters={filters} categories={categories} brands={brands} onFiltersChange={setFilters} />
           </div>
 
           <div className="flex-1">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-2">
+                <div className="hidden sm:flex items-center gap-1 border rounded-lg p-1">
+                  <Button
+                    variant={viewMode === "grid" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("grid")}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Grid3x3 className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === "list" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    className="h-8 w-8 p-0"
+                  >
+                    <List className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className="md:hidden">
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filtros
+                </Button>
+              </div>
+            </div>
             {isLoading ? (
               <div className="text-center py-20 text-gray-600">
                 <span className="text-lg">Cargando catálogo...</span>
               </div>
             ) : (
-              <ProductGrid products={filteredProducts} />
+              <ProductGrid products={paginatedProducts} viewMode={viewMode} />
+            )}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </Button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    // Show first, last, current, and adjacent pages
+                    if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                      return (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handlePageChange(page)}
+                          className="min-w-[40px]"
+                        >
+                          {page}
+                        </Button>
+                      )
+                    } else if (page === currentPage - 2 || page === currentPage + 2) {
+                      return (
+                        <span key={page} className="px-2">
+                          ...
+                        </span>
+                      )
+                    }
+                    return null
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Siguiente
+                </Button>
+              </div>
             )}
           </div>
         </div>

@@ -16,10 +16,13 @@ import { useCart } from "@/hooks/use-cart"
 import { usePayment } from "@/hooks/use-payment"
 import type { PaymentMethod, CreateOrderRequest, ShippingAddress } from "@/types/payment"
 import { PaymentService } from "@/services/payment.service"
+import type {
+  CreateOrderPayload, CreateShippingAddress, CreateOrderItem
+} from "@/types/payment"
 
 export default function CartPage() {
   const router = useRouter()
-  const { items, total, updateQuantity, removeItem, clearCart } = useCart()
+  const { items, subtotal, updateQty, removeItem, clear } = useCart()
   const { createOrder, initiatePayment, isLoading, isAuthenticating, error, pruebaJM } = usePayment()
   
 
@@ -70,8 +73,8 @@ export default function CartPage() {
     }).format(price)
   }
 
-  const shippingCost = total > 50000 ? 0 : 5990
-  const finalTotal = total + shippingCost
+  const shippingCost = subtotal > 50000 ? 0 : 5990
+  const finalTotal = subtotal + shippingCost
 
   const handleInputChange = (field: string, value: string) => {
     setOrderData((prev) => ({ ...prev, [field]: value }))
@@ -82,7 +85,7 @@ export default function CartPage() {
     return required.every((field) => orderData[field as keyof typeof orderData]?.trim() !== "")
   }
 
-   const handleCheckout_mock = async () => {
+  const handleCheckout_mock = async () => {
     if (!validateForm()) {
       alert("Por favor completa todos los campos requeridos")
       return
@@ -112,6 +115,7 @@ export default function CartPage() {
           }),
         })
         const data = await res.json()
+        console.log(data, 'data')
         if (!res.ok) throw new Error(data.error || "Error al iniciar pago con Webpay")
         if (data.url && data.token) {
           window.location.href = `${data.url}?token_ws=${data.token}`
@@ -124,7 +128,7 @@ export default function CartPage() {
         // Simular éxito de orden y pago para otros métodos
         await new Promise((resolve) => setTimeout(resolve, 1200))
         setOrderSuccess(true)
-        clearCart()
+        clear()
         setTimeout(() => {
           router.push(`/order/success?orderId=MOCK123`)
         }, 3000)
@@ -135,6 +139,66 @@ export default function CartPage() {
       setIsProcessing(false)
     }
   }
+
+  const handleConfirmOrder = async () => {
+    if (validateForm()) {
+      // Aquí iría la lógica para procesar el pedido
+      // CreateOrderPayload, CreateShippingAddress, CreateOrderItem
+      
+      const newShippingAddress: CreateShippingAddress = {        
+        firstName: orderData.firstName,
+        lastName: orderData.lastName,
+        email: orderData.email,
+        phone: orderData.phone,
+        address: orderData.address,
+        city: orderData.city,
+        region: orderData.region,
+        zipCode: orderData.zipCode
+      }
+      const newCreateOrderItem: CreateOrderItem[] = items.map(item => ({
+        product_id: item.id || 0,
+        price: item.price,
+        quantity: item.quantity,
+      }))
+      const returnUrl = `${window.location.origin}/success`
+      const statusUrl = `${window.location.origin}/revision-orden`
+      const newCreateOrderPayload: CreateOrderPayload = {
+        items: newCreateOrderItem,
+        shippingAddress: newShippingAddress,
+        payment_method: "webpay",
+        subtotal: subtotal,
+        shippingCost: shippingCost,
+        total: finalTotal,
+        // notes: customerData.comentarios,
+        return_url: returnUrl,
+        status_url: statusUrl,
+      }
+      const response = await createOrder(newCreateOrderPayload)
+      if (response.data_web_pay) {
+        localStorage.setItem("payment_id", response.payment_id)
+        if (response.data_web_pay.url && response.data_web_pay.token) {
+          window.location.href = `${response.data_web_pay.url}?token_ws=${response.data_web_pay.token}`
+          return
+        } else {
+          throw new Error("Respuesta inválida de Webpay")
+        }
+      }
+      /*setCustomerData({
+        nombre: "",
+        email: "",
+        telefono: "",
+        ciudad: "",
+        direccion: "",
+        codigoPostal: "",
+        comentarios: "",
+      })
+      setShowCheckout(false)
+      setErrors({})
+      clear()*/
+    }
+  }
+
+  const updateQuantity = (key: string, newQuantity: number) => updateQty(key, newQuantity)
 
   const handleCheckout = async () => {
     if (!validateForm()) {
@@ -170,9 +234,9 @@ export default function CartPage() {
           zipCode: orderData.zipCode,
         },
         paymentMethodId: orderData.paymentMethodId,
-        subtotal: total,
+        subtotal: subtotal,
         shippingCost,
-        total: finalTotal,
+        subtotal: finalTotal,
       }
 
       const order = await createOrder(orderRequest)
@@ -203,7 +267,7 @@ export default function CartPage() {
       } else if (paymentResponse.status === "approved") {
         // Pago aprobado inmediatamente (ej: transferencia)
         setOrderSuccess(true)
-        clearCart()
+        clear()
 
         // Mostrar mensaje de éxito y redirigir después de unos segundos
         setTimeout(() => {
@@ -287,7 +351,7 @@ export default function CartPage() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Tu Carrito ({items.length} productos)</span>
-                <Button variant="ghost" size="sm" onClick={clearCart} className="text-red-600 hover:text-red-700">
+                <Button variant="ghost" size="sm" onClick={clear} className="text-red-600 hover:text-red-700">
                   <Trash2 className="w-4 h-4 mr-2" />
                   Vaciar Carrito
                 </Button>
@@ -297,11 +361,18 @@ export default function CartPage() {
               {items.map((item) => (
                 <div key={item.id} className="flex items-center space-x-4 p-4 border rounded-lg">
                   <div className="relative w-20 h-20 flex-shrink-0">
-                    <Image
+                    {/* <Image
                       src={item.image || "/placeholder.svg"}
                       alt={item.name}
                       fill
                       className="object-cover rounded"
+                    /> */}
+                    <img
+                      src={item.image || "/placeholder.svg"}
+                      alt={item.name}
+                      width={150}
+                      height={150}
+                      className="w-full h-20 object-cover"
                     />
                   </div>
 
@@ -314,13 +385,12 @@ export default function CartPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      disabled={item.quantity <= 1}
+                      onClick={() => updateQuantity(item._key, item.quantity - 1)}
                     >
                       <Minus className="w-4 h-4" />
                     </Button>
                     <span className="w-12 text-center font-medium">{item.quantity}</span>
-                    <Button variant="outline" size="sm" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
+                    <Button variant="outline" size="sm" onClick={() => updateQuantity(item._key, item.quantity + 1)}>
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
@@ -352,7 +422,7 @@ export default function CartPage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span>{formatPrice(total)}</span>
+                <span>{formatPrice(subtotal)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="flex items-center">
@@ -363,8 +433,8 @@ export default function CartPage() {
                   {shippingCost === 0 ? "GRATIS" : formatPrice(shippingCost)}
                 </span>
               </div>
-              {total < 50000 && (
-                <p className="text-sm text-gray-600">Agrega {formatPrice(50000 - total)} más para envío gratis</p>
+              {subtotal < 50000 && (
+                <p className="text-sm text-gray-600">Agrega {formatPrice(50000 - subtotal)} más para envío gratis</p>
               )}
               <Separator />
               <div className="flex justify-between text-lg font-bold">
@@ -434,15 +504,6 @@ export default function CartPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="city">Ciudad *</Label>
-                  <Input
-                    id="city"
-                    value={orderData.city}
-                    onChange={(e) => handleInputChange("city", e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
                   <Label htmlFor="region">Región *</Label>
                   <Select value={orderData.region} onValueChange={(value) => handleInputChange("region", value)}>
                     <SelectTrigger>
@@ -468,21 +529,30 @@ export default function CartPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label htmlFor="city">Ciudad *</Label>
+                  <Input
+                    id="city"
+                    value={orderData.city}
+                    onChange={(e) => handleInputChange("city", e.target.value)}
+                    required
+                  />
+                </div>
               </div>
 
-              <div>
+              {/* <div>
                 <Label htmlFor="zipCode">Código Postal</Label>
                 <Input
                   id="zipCode"
                   value={orderData.zipCode}
                   onChange={(e) => handleInputChange("zipCode", e.target.value)}
                 />
-              </div>
+              </div> */}
             </CardContent>
           </Card>
 
           {/* Método de pago */}
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
                 <CreditCard className="w-5 h-5 mr-2" />
@@ -507,12 +577,12 @@ export default function CartPage() {
                 </SelectContent>
               </Select>
             </CardContent>
-          </Card>
+          </Card> */}
 
           <Button
             size="lg"
             className="w-full bg-blue-600 hover:bg-blue-700"
-            onClick={handleCheckout_mock}
+            onClick={handleConfirmOrder}
             disabled={isProcessing || isLoading || isAuthenticating || !validateForm()}
           >
             {isAuthenticating

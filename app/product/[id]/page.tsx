@@ -1,7 +1,7 @@
 "use client"
 
-import { useParams } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect, useMemo } from "react"
+import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, Star, ShoppingCart, Heart, Share2, Truck, Shield, RotateCcw } from "lucide-react"
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {useProduct} from "@/hooks/use-products"
+import type { ProductResponse} from "@/types/products"
 import { useCart } from "@/hooks/use-cart"
 
 // Mock data - en una aplicación real vendría de una API
@@ -71,11 +73,30 @@ interface PageProps {
 // @ts-ignore
 // export default function ProductPage({ params }: PageProps) {
 export default function ProductPage() {
-  const params = useParams()
-  const id = params.id as string
-  const [selectedImage, setSelectedImage] = useState(0)
+  const { id } = useParams()
+  const productId = Number(id)
+  const { getProduct, isLoading } = useProduct()
+  const [product, setProductData] = useState<ProductResponse | null>(null)
+  const [relatedProducts, setrelatedProducts] = useState<ProductResponse[]>([])
+  
   const [quantity, setQuantity] = useState(1)
-  const { addItem } = useCart()
+  const { images = [], main_image } = product ?? {}
+  const PLACEHOLDER = "/placeholder.svg?height=600&width=600"
+  const { addItem, clear } = useCart()
+
+  const imageUrls = useMemo(() => {
+    const primary = (typeof main_image === "string" && main_image.trim()) ? [main_image] : []
+    const gallery = Array.isArray(images) ? images.map(i => i?.url).filter(Boolean) : []
+    const all = [...primary, ...gallery]
+    const dedup = Array.from(new Set(all))
+    return dedup.length ? dedup : [PLACEHOLDER]
+  }, [main_image, images])
+  const [selectedImage, setSelectedImage] = useState(0)
+  const router = useRouter()
+
+  useEffect(() => {
+    if (selectedImage >= imageUrls.length) setSelectedImage(0)
+  }, [imageUrls.length, selectedImage])
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("es-CL", {
@@ -85,20 +106,95 @@ export default function ProductPage() {
     }).format(price)
   }
 
-  const handleAddToCart = () => {
-    for (let i = 0; i < quantity; i++) {
-      addItem({
-        id: mockProduct.id,
-        name: mockProduct.name,
-        price: mockProduct.price,
-        image: mockProduct.images[0],
-      })
-    }
+  const [showFeatureErrors, setShowFeatureErrors] = useState(false)
+
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+  
+  function firstImageUrl(images?: any): string | undefined {
+    if (!images || !Array.isArray(images) || images.length === 0) return undefined
+    const first = images[0]
+    return typeof first === "string" ? first : (first?.url || first?.secure_url || first?.path)
   }
 
-  const discountPercentage = mockProduct.originalPrice
-    ? Math.round(((mockProduct.originalPrice - mockProduct.price) / mockProduct.originalPrice) * 100)
+  const handleAddToCart = (product: any) => {
+    // construir opciones elegidas para el carrito
+    console.log("Agregar al carrito:", product, "Cantidad:", quantity)
+    clear()
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: Number(product.price), // venía string en tu payload
+      image: product.image || product.main_image || firstImageUrl(product.images) || PLACEHOLDER,
+      quantity, // usa tu estado de cantidad
+    })
+  }
+
+  const handleSelect = (featureId: string | number, value: string | number) => {
+    setSelectedOptions(prev => ({ ...prev, [String(featureId)]: String(value) }))
+  }
+
+  function mapRelatedProduct(product: any) {
+    let image = PLACEHOLDER
+    if (product.main_image){
+      image = product.main_image
+    }
+    if (product.images.length > 0){
+      image = product.images[0].url
+    }
+    return { ...product, image }
+  }
+  useEffect(() => {
+    const loadProduct = async () => {
+      if (productId) {
+        const productData = await getProduct(productId)
+        if (productData) {
+          console.log("Producto cargado:", productData)
+          setProductData(productData)
+          setrelatedProducts(productData.related.map(mapRelatedProduct))
+        } else {
+          setTimeout(() => router.push("/"), 3000)
+          // setProductData(mockproduct)
+        }
+      }
+      // setProductData(mockproduct)
+    }
+    loadProduct()
+  }, [productId])
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-500"></div>
+      </div>
+    )
+  }
+
+  // const discountPercentage = product.originalPrice
+  //   ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+  //   : 0
+  
+  const discountPercentage = (product: ProductResponse) => {
+    return product.original_price
+    ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
     : 0
+  }
+
+  const benefitConfig: Record<
+    string,
+    { icon: JSX.Element; label: string }
+  > = {
+    delivery: {
+      icon: <Truck className="w-4 h-4 text-blue-600" />,
+      label: "Envío gratis sobre",
+    },
+    warranty: {
+      icon: <Shield className="w-4 h-4 text-blue-600" />,
+      label: "Garantía",
+    },
+    return: {
+      icon: <RotateCcw className="w-4 h-4 text-blue-600" />,
+      label: "Devolución",
+    },
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -116,34 +212,35 @@ export default function ProductPage() {
         {/* Galería de imágenes */}
         <div className="space-y-4">
           <div className="relative aspect-square overflow-hidden rounded-lg border">
-            <Image
-              src={mockProduct.images[selectedImage] || "/placeholder.svg"}
-              alt={mockProduct.name}
-              fill
-              className="object-cover"
-            />
-            {mockProduct.badge && (
-              <Badge className={`absolute top-4 left-4 ${mockProduct.badgeColor} text-white`}>
-                {mockProduct.badge}
-                {discountPercentage > 0 && ` -${discountPercentage}%`}
-              </Badge>
-            )}
+            <img src={imageUrls[selectedImage]} alt={product.name} className="object-cover"/>
+            <div className="absolute top-4 left-4 flex flex-col space-y-2">
+              {product.is_new && <Badge className="bg-green-600 text-white font-bold">
+                Nuevo</Badge>
+              }
+              {discountPercentage(product) > 0 && (
+                <Badge className={`absolute top-4 left-4 bg-red-500 text-white`}>
+                  Oferta
+                  {` -${discountPercentage(product)}%`}
+                </Badge>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-4 gap-2">
-            {mockProduct.images.map((image, index) => (
+            {imageUrls.map((image, index) => (
               <button
                 key={index}
                 onClick={() => setSelectedImage(index)}
-                className={`relative aspect-square overflow-hidden rounded border-2 transition-all ${
-                  selectedImage === index ? "border-blue-500" : "border-gray-200 hover:border-gray-300"
+                className={`relative overflow-hidden rounded-lg border-2 transition-all duration-300 ${
+                  selectedImage === index ? "border-red-500" : "border-red-800/30 hover:border-red-600"
                 }`}
               >
-                <Image
+                <img
                   src={image || "/placeholder.svg"}
-                  alt={`${mockProduct.name} ${index + 1}`}
-                  fill
-                  className="object-cover"
+                  alt={product.name}
+                  width={150}
+                  height={150}
+                  className="w-full h-20 object-cover"
                 />
               </button>
             ))}
@@ -153,42 +250,51 @@ export default function ProductPage() {
         {/* Información del producto */}
         <div className="space-y-6">
           <div>
-            <div className="text-sm text-gray-500 mb-2">
-              {mockProduct.brand} • SKU: {mockProduct.sku}
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">{mockProduct.name}</h1>
+            {product.brand_data && (
+              <div className="text-sm text-gray-500 mb-2">
+                {product.brand_data.name} • SKU: {product.sku}
+              </div>
+            )}
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{product.name}</h1>
 
-            <div className="flex items-center mb-4">
+            {/* rating */}
+            {/* <div className="flex items-center mb-4">
               <div className="flex items-center">
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
                     className={`w-5 h-5 ${
-                      i < Math.floor(mockProduct.rating) ? "text-yellow-400 fill-current" : "text-gray-300"
+                      i < Math.floor(product.rating) ? "text-yellow-400 fill-current" : "text-gray-300"
                     }`}
                   />
                 ))}
               </div>
               <span className="text-sm text-gray-600 ml-2">
-                {mockProduct.rating} ({mockProduct.reviews} reseñas)
+                {product.rating} ({product.reviews} reseñas)
               </span>
-            </div>
+            </div> */}
 
             <div className="flex items-center space-x-4 mb-6">
-              <span className="text-3xl font-bold text-blue-600">{formatPrice(mockProduct.price)}</span>
-              {mockProduct.originalPrice && (
-                <span className="text-xl text-gray-500 line-through">{formatPrice(mockProduct.originalPrice)}</span>
+              <span className="text-3xl font-bold text-blue-600">
+                {formatPrice(product.price)}
+              </span>
+              {product.original_price != product.price && (
+                <span className="text-xl text-gray-500 line-through">
+                  {formatPrice(product.original_price)}
+                </span>
               )}
             </div>
 
-            <p className="text-gray-700 mb-6">{mockProduct.description}</p>
+            <p className="text-gray-700 mb-6" style={{ whiteSpace: "pre-line" }}>
+              {product.description}
+            </p>
 
             {/* Stock */}
             <div className="flex items-center mb-6">
-              {mockProduct.inStock ? (
+              {product.stock ? (
                 <div className="flex items-center text-green-600">
                   <div className="w-2 h-2 bg-green-600 rounded-full mr-2"></div>
-                  <span>En stock ({mockProduct.stockQuantity} disponibles)</span>
+                  <span>En stock ({product.stock} disponibles)</span>
                 </div>
               ) : (
                 <div className="flex items-center text-red-600">
@@ -213,36 +319,31 @@ export default function ProductPage() {
               <Button
                 size="lg"
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
-                onClick={handleAddToCart}
-                disabled={!mockProduct.inStock}
+                onClick={() => handleAddToCart(product)}
+                disabled={!product.in_stock}
               >
                 <ShoppingCart className="w-5 h-5 mr-2" />
                 Agregar al Carrito
-              </Button>
-
-              <Button variant="outline" size="lg">
-                <Heart className="w-5 h-5" />
-              </Button>
-
-              <Button variant="outline" size="lg">
-                <Share2 className="w-5 h-5" />
               </Button>
             </div>
 
             {/* Beneficios */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <Truck className="w-4 h-4 text-blue-600" />
-                <span>Envío gratis sobre $50.000</span>
-              </div>
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <Shield className="w-4 h-4 text-blue-600" />
-                <span>Garantía de 2 años</span>
-              </div>
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <RotateCcw className="w-4 h-4 text-blue-600" />
-                <span>Devolución 30 días</span>
-              </div>
+              {product.benefits?.map((benefit) => {
+                const config = benefitConfig[benefit.benefit_type];
+                if (!config) return null; // por si viene algo raro
+                return (
+                  <div
+                    key={benefit.id}
+                    className="flex items-center space-x-2 text-sm text-gray-600"
+                  >
+                    {config.icon}
+                    <span>
+                      {benefit.value}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -250,44 +351,27 @@ export default function ProductPage() {
 
       {/* Tabs con información adicional */}
       <div className="mt-16">
-        <Tabs defaultValue="description" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="description">Descripción</TabsTrigger>
+        <Tabs defaultValue="specifications" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="specifications">Especificaciones</TabsTrigger>
             <TabsTrigger value="compatibility">Compatibilidad</TabsTrigger>
-            <TabsTrigger value="reviews">Reseñas</TabsTrigger>
+            {/* <TabsTrigger value="reviews">Reseñas</TabsTrigger> */}
           </TabsList>
-
-          <TabsContent value="description" className="mt-8">
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold mb-4">Descripción del Producto</h3>
-                <p className="text-gray-700 mb-6">{mockProduct.description}</p>
-                <h4 className="text-lg font-semibold mb-3">Características Principales:</h4>
-                <ul className="space-y-2">
-                  {mockProduct.features.map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="text-blue-600 mr-2">•</span>
-                      <span className="text-gray-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="specifications" className="mt-8">
             <Card>
               <CardContent className="p-6">
                 <h3 className="text-xl font-semibold mb-4">Especificaciones Técnicas</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(mockProduct.specifications).map(([key, value]) => (
-                    <div key={key} className="flex justify-between py-2 border-b border-gray-100">
-                      <span className="font-medium text-gray-900">{key}:</span>
-                      <span className="text-gray-700">{value}</span>
-                    </div>
-                  ))}
-                </div>
+                  {product.specifications && product.specifications.map((d) => {
+                    return (
+                      <div key={d.id} className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="font-medium text-gray-900">{d.name}:</span>
+                        <span className="text-gray-700">{d.value}</span>
+                      </div>
+                    )
+                  })}
+                </div> 
               </CardContent>
             </Card>
           </TabsContent>
@@ -297,12 +381,14 @@ export default function ProductPage() {
               <CardContent className="p-6">
                 <h3 className="text-xl font-semibold mb-4">Vehículos Compatibles</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {mockProduct.compatibility.map((vehicle, index) => (
-                    <div key={index} className="flex items-center py-2">
-                      <span className="text-green-600 mr-2">✓</span>
-                      <span className="text-gray-700">{vehicle}</span>
-                    </div>
-                  ))}
+                  {product.compatibilities && product.compatibilities.map((d) => {
+                    return (
+                      <div key={d.id} className="flex items-center py-2">
+                        <span className="text-green-600 mr-2">✓</span>
+                        <span className="text-gray-700">{d.value}</span>
+                      </div>
+                    )
+                  })}
                 </div>
                 <p className="text-sm text-gray-600 mt-4">
                   * Esta lista no es exhaustiva. Si tu vehículo no aparece, contáctanos para verificar compatibilidad.
@@ -311,7 +397,7 @@ export default function ProductPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="reviews" className="mt-8">
+          {/* <TabsContent value="reviews" className="mt-8">
             <Card>
               <CardContent className="p-6">
                 <h3 className="text-xl font-semibold mb-4">Reseñas de Clientes</h3>
@@ -362,8 +448,47 @@ export default function ProductPage() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent> */}
         </Tabs>
+
+        {/* Related Products */}
+        <div>
+          <h3 className="text-3xl font-bold text-red-600 mb-8 my-5 text-center">PRODUCTOS RELACIONADOS</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {relatedProducts.map((relatedProduct) => (
+              <Card
+                key={relatedProduct.id}
+                className="bg-gray-900 border border-red-800/30 hover:border-red-500 transition-all duration-300 transform hover:scale-105"
+              >
+                <CardContent className="p-0">
+                  <img
+                    src={relatedProduct.image || "/placeholder.svg"}
+                    alt={relatedProduct.name}
+                    width={300}
+                    height={300}
+                    className="w-full h-48 object-cover rounded-t-lg"
+                  />
+                  <div className="p-6">
+                    <h4 className="font-bold text-white mb-2">
+                      {relatedProduct.name}</h4>
+                    <div className="flex items-center justify-between">
+                      <span className="text-red-600 font-bold text-lg">
+                        ${relatedProduct.price.toLocaleString()}</span>
+                      {/* rating */}
+                      {/* <div className="flex items-center space-x-1">
+                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                        <span className="text-sm text-gray-400">{relatedProduct.rating}</span>
+                      </div> */}
+                    </div>
+                    <Link href={`/product/${relatedProduct.id}`}>
+                      <Button className="w-full mt-4 bg-red-700 hover:bg-red-600">Ver Producto</Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )

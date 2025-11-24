@@ -20,13 +20,16 @@ export default function PaymentSuccessPage() {
 
   useEffect(() => {
     const loadOrder = async () => {
+      console.log(searchParams, 'searchParams')
       if (orderId) {
+        // const orderData = await getOrder(orderId)
         const orderData = await getOrder(orderId)
+
         if (orderData) {
           setOrder(orderData)
         } else {
           // Si no se puede cargar la orden, redirigir al inicio
-          setTimeout(() => router.push("/"), 3000)
+          // setTimeout(() => router.push("/"), 3000)
         }
       }
     }
@@ -44,11 +47,8 @@ export default function PaymentSuccessPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-16">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando información del pedido...</p>
-        </div>
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-500"></div>
       </div>
     )
   }

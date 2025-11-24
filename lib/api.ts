@@ -9,27 +9,32 @@ export interface ApiResponse<T> {
 
 class ApiClient {
   private baseUrl: string
+  private token: string | null = null
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl
   }
 
+  setToken(token: string | null) {
+    localStorage.setItem('token', token)
+    this.token = token
+  }
+
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+    const token = localStorage.getItem('token')
     try {
       const url = `${this.baseUrl}${endpoint}`
 
-      const defaultHeaders = {
+      const headers: Record<string, string> = {
         "Content-Type": "application/json",
         Accept: "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {}),
       }
 
       const response = await fetch(url, {
         ...options,
-        credentials: 'include',   // 👈 CLAVE: Enviar cookies HTTP Only automáticamente
-        headers: {
-          ...defaultHeaders,
-          ...options.headers,
-        },
+        headers,
       })
 
       const data = await response.json()
@@ -53,11 +58,11 @@ class ApiClient {
     }
   }
 
-  async get<T>(endpoint: string, headers?: Record<string, string>): Promise<ApiResponse<T>> {
+  get<T>(endpoint: string, headers?: Record<string, string>) {
     return this.request<T>(endpoint, { method: "GET", headers })
   }
 
-  async post<T>(endpoint: string, body?: any, headers?: Record<string, string>): Promise<ApiResponse<T>> {
+  post<T>(endpoint: string, body?: any, headers?: Record<string, string>) {
     return this.request<T>(endpoint, {
       method: "POST",
       body: body ? JSON.stringify(body) : undefined,
@@ -65,7 +70,7 @@ class ApiClient {
     })
   }
 
-  async put<T>(endpoint: string, body?: any, headers?: Record<string, string>): Promise<ApiResponse<T>> {
+  put<T>(endpoint: string, body?: any, headers?: Record<string, string>) {
     return this.request<T>(endpoint, {
       method: "PUT",
       body: body ? JSON.stringify(body) : undefined,
@@ -73,9 +78,10 @@ class ApiClient {
     })
   }
 
-  async delete<T>(endpoint: string, headers?: Record<string, string>): Promise<ApiResponse<T>> {
+  delete<T>(endpoint: string, headers?: Record<string, string>) {
     return this.request<T>(endpoint, { method: "DELETE", headers })
   }
 }
-
-export const apiClient = new ApiClient(API_BASE_URL)
+// npm run dev -- --port 3001 --hostname base.localhost
+// export const apiClient = new ApiClient(API_BASE_URL)
+export const apiClient = new ApiClient("https://repuestosromeral.sitios.softwarelabs.cl/api/")

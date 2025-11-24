@@ -1,9 +1,13 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
 import { Star, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { ProductService } from "@/services/product.service"
+import useSWR from 'swr'
 
 const featuredProducts = [
   {
@@ -51,6 +55,9 @@ const featuredProducts = [
 ]
 
 export default function FeaturedProducts() {
+  const PLACEHOLDER = "/placeholder.svg?height=300&width=300"
+  // const { getProducts } = useProduct()
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("es-CL", {
       style: "currency",
@@ -58,6 +65,49 @@ export default function FeaturedProducts() {
       minimumFractionDigits: 0,
     }).format(price)
   }
+  const firstImageUrl = (images?: any[]): string | undefined => {
+    if (!Array.isArray(images) || images.length === 0) return undefined
+    const first = images[0]
+    return typeof first === "string" ? first : (first?.url || first?.secure_url || first?.path)
+  }
+
+  const mapProduct = (product: any) => {
+    const image = product?.main_image || firstImageUrl(product?.images) || PLACEHOLDER
+    return {
+      ...product,
+      image,
+      features: product?.features ?? [],
+      in_stock: product?.in_stock ?? true,
+    }
+  }
+  const fetchProducts = async () => {
+    console.log("Authentication status for featured products:")
+    const isAuthenticated = await ProductService.ensureAuthenticated()
+    if (!isAuthenticated) return { products: [] }
+
+    const resp = await ProductService.getProducts()
+    const rawProducts = resp?.data?.products ?? []
+    console.log("Fetched products for featured:", rawProducts)
+
+    return {
+      products: rawProducts.map(mapProduct),
+    }
+  }
+
+  // 👇 Aquí el arreglo: agregar KEY y pasar fetcher como segundo argumento
+  const { data, error, isLoading } = useSWR(
+    "featured-products",      // <- key
+    fetchProducts,            // <- fetcher
+    {
+      revalidateOnFocus: false,
+      shouldRetryOnError: false,
+      onSuccess: (d) => console.log("SWR onSuccess featured:", d),
+      onError: (e) => console.error("SWR onError featured:", e),
+    }
+  )
+
+  const products = data?.products ?? []
+  const featuredProducts = products.slice(0, 3)
 
   return (
     <section className="py-16">
@@ -69,16 +119,15 @@ export default function FeaturedProducts() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {featuredProducts.map((product) => (
             <Card key={product.id} className="group hover:shadow-lg transition-all duration-300">
               <CardContent className="p-0">
                 <div className="relative">
                   <div className="relative h-64 overflow-hidden rounded-t-lg">
-                    <Image
+                    <img 
                       src={product.image || "/placeholder.svg"}
                       alt={product.name}
-                      fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>

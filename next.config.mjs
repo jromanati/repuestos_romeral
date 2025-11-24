@@ -7,26 +7,18 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
+    domains: [
+      'res.cloudinary.com',  // 👈 ESTE es el importante
+      'blob.v0.dev',
+      'placeholder.svg',
+    ],
     remotePatterns: [
       {
-        protocol: 'http',
-        hostname: 'base.localhost',
-        pathname: '/media/**',
+        protocol: 'https',
+        hostname: 'res.cloudinary.com', // 👈 y esto también ayuda
       },
     ],
-  },
-  async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: [
-          {
-            key: "Access-Control-Allow-Origin",
-            value: "*",  // o tu dominio específico en producción
-          },
-        ],
-      },
-    ]
+    unoptimized: true,
   },
 }
 

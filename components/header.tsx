@@ -8,11 +8,20 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { useCart } from "@/hooks/use-cart"
+import { useRouter } from "next/navigation"
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const { items } = useCart()
+  const router = useRouter()
+  const [search, setSearch] = useState("")
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    localStorage.setItem("search_product", search)
+    router.push(`/catalog?search=${encodeURIComponent(search)}`)
+  }
 
   const itemCount = items.reduce((total, item) => total + item.quantity, 0)
 
@@ -59,12 +68,17 @@ export default function Header() {
           {/* Search bar */}
           <div className="hidden lg:flex flex-1 max-w-lg mx-8">
             <div className="relative w-full">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                type="search"
-                placeholder="Buscar productos, marcas, modelos..."
-                className="pl-12 pr-4 h-12 border-2 border-gray-200 focus:border-red-500 rounded-full"
-              />
+              <form onSubmit={handleSearch} className="relative w-full">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  id="search"
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar productos, marcas, modelos..."
+                  className="pl-12 pr-4 h-12 border-2 border-gray-200 focus:border-red-500 rounded-full"
+                />
+              </form>
             </div>
           </div>
 

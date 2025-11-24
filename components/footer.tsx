@@ -40,7 +40,7 @@ export default function Footer() {
                   Contacto
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link href="/shipping" className="text-gray-300 hover:text-white">
                   Envíos
                 </Link>
@@ -49,7 +49,7 @@ export default function Footer() {
                 <Link href="/returns" className="text-gray-300 hover:text-white">
                   Devoluciones
                 </Link>
-              </li>
+              </li> */}
             </ul>
           </div>
 
