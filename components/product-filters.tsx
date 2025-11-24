@@ -19,8 +19,24 @@ interface Filters {
   sortBy: string
 }
 
+interface Category {
+  id: string
+  name: string
+  parent: string | null
+  products_count: number
+  subcategories?: Category[]
+}
+
+interface Brand {
+  id: string
+  name: string
+  products_count: number
+}
+
 interface ProductFiltersProps {
   filters: Filters
+  categories: Category[]
+  brands: Brand[]
   onFiltersChange: (filters: Filters) => void
 }
 

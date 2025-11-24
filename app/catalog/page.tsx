@@ -104,7 +104,7 @@ export default function CatalogPage() {
       filteredCategories.forEach((category) => {
         if (category.parent === null) {
           if (category.subcategories && category.subcategories.length > 0) {
-            category.subcategories.forEach((sub) => {
+            category.subcategories.forEach((sub:{id:any}) => {
               categoryIdsForProducts.add(sub.id)
             })
           }
