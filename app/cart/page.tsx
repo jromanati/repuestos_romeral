@@ -201,90 +201,6 @@ export default function CartPage() {
 
   const updateQuantity = (key: string, newQuantity: number) => updateQty(key, newQuantity)
 
-  const handleCheckout = async () => {
-    if (!validateForm()) {
-      alert("Por favor completa todos los campos requeridos")
-      return
-    }
-
-    if (items.length === 0) {
-      alert("Tu carrito está vacío")
-      return
-    }
-
-    setIsProcessing(true)
-
-    try {
-      // 1. Crear la orden
-      const orderRequest: CreateOrderRequest = {
-        items: items.map((item) => ({
-          productId: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.image,
-        })),
-        shippingAddress: {
-          firstName: orderData.firstName,
-          lastName: orderData.lastName,
-          email: orderData.email,
-          phone: orderData.phone,
-          address: orderData.address,
-          city: orderData.city,
-          region: orderData.region,
-          zipCode: orderData.zipCode,
-        },
-        paymentMethodId: orderData.paymentMethodId,
-        subtotal: subtotal,
-        shippingCost,
-        subtotal: finalTotal,
-      }
-
-      const order = await createOrder(orderRequest)
-
-      if (!order) {
-        throw new Error("No se pudo crear la orden")
-      }
-
-      // 2. Iniciar el proceso de pago
-      const paymentRequest = {
-        orderId: order.id,
-        amount: finalTotal,
-        currency: "CLP" as const,
-        paymentMethodId: orderData.paymentMethodId,
-        returnUrl: `${window.location.origin}/payment/success?orderId=${order.id}`,
-        cancelUrl: `${window.location.origin}/payment/cancel?orderId=${order.id}`,
-      }
-      const paymentResponse = await initiatePayment(paymentRequest)
-
-      if (!paymentResponse) {
-        throw new Error("No se pudo iniciar el pago")
-      }
-
-      // 3. Manejar la respuesta del pago
-      if (paymentResponse.redirectUrl) {
-        // Redirigir a la pasarela de pago (ej: Webpay)
-        window.location.href = paymentResponse.redirectUrl
-      } else if (paymentResponse.status === "approved") {
-        // Pago aprobado inmediatamente (ej: transferencia)
-        setOrderSuccess(true)
-        clear()
-
-        // Mostrar mensaje de éxito y redirigir después de unos segundos
-        setTimeout(() => {
-          router.push(`/order/success?orderId=${order.id}`)
-        }, 3000)
-      } else {
-        throw new Error(paymentResponse.message || "Error en el procesamiento del pago")
-      }
-    } catch (err) {
-      console.error("Error en checkout:", err)
-      alert(err instanceof Error ? err.message : "Error inesperado durante el checkout")
-    } finally {
-      setIsProcessing(false)
-    }
-  }
-
   if (items.length === 0 && !orderSuccess) {
     return (
       <div className="container mx-auto px-4 py-16">
@@ -401,7 +317,7 @@ export default function CartPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => removeItem(String(item.id))}
                       className="text-red-600 hover:text-red-700 mt-1"
                     >
                       <Trash2 className="w-4 h-4" />
