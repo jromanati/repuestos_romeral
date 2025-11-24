@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, type ReactNode } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -180,7 +180,7 @@ export default function ProductPage() {
 
   const benefitConfig: Record<
     string,
-    { icon: JSX.Element; label: string }
+    { icon: ReactNode; label: string }
   > = {
     delivery: {
       icon: <Truck className="w-4 h-4 text-blue-600" />,
