@@ -329,21 +329,28 @@ export default function ProductPage() {
 
             {/* Beneficios */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              {product.benefits?.map((benefit) => {
-                const config = benefitConfig[benefit.benefit_type];
-                if (!config) return null; // por si viene algo raro
-                return (
-                  <div
-                    key={benefit.id}
-                    className="flex items-center space-x-2 text-sm text-gray-600"
-                  >
-                    {config.icon}
-                    <span>
-                      {benefit.value}
-                    </span>
-                  </div>
-                );
-              })}
+              {(() => {
+                const benefitsList = (Array.isArray(product.benefits)
+                  ? product.benefits
+                  : product.benefits
+                  ? [product.benefits]
+                  : []) as any[];
+                return benefitsList.map((benefit: any) => {
+                  const config = benefitConfig[benefit.benefit_type];
+                  if (!config) return null; // por si viene algo raro
+                  return (
+                    <div
+                      key={benefit.id}
+                      className="flex items-center space-x-2 text-sm text-gray-600"
+                    >
+                      {config.icon}
+                      <span>
+                        {benefit.value}
+                      </span>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
         </div>
@@ -363,14 +370,26 @@ export default function ProductPage() {
               <CardContent className="p-6">
                 <h3 className="text-xl font-semibold mb-4">Especificaciones Técnicas</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {product.specifications && product.specifications.map((d) => {
-                    return (
-                      <div key={d.id} className="flex justify-between py-2 border-b border-gray-100">
-                        <span className="font-medium text-gray-900">{d.name}:</span>
-                        <span className="text-gray-700">{d.value}</span>
-                      </div>
-                    )
-                  })}
+                  {(() => {
+                    const specificationsList = (Array.isArray(product.specifications)
+                      ? product.specifications
+                      : product.specifications
+                      ? [product.specifications]
+                      : []) as any[];
+                    return specificationsList.map((specification: any) => {
+                      
+                      return (
+                        <div key={specification.id} className="flex justify-between py-2 border-b border-gray-100">
+                          <span className="font-medium text-gray-900">
+                            {specification.name}:
+                          </span>
+                          <span className="text-gray-700">
+                            {specification.value}
+                          </span>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div> 
               </CardContent>
             </Card>
@@ -381,14 +400,22 @@ export default function ProductPage() {
               <CardContent className="p-6">
                 <h3 className="text-xl font-semibold mb-4">Vehículos Compatibles</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {product.compatibilities && product.compatibilities.map((d) => {
-                    return (
-                      <div key={d.id} className="flex items-center py-2">
-                        <span className="text-green-600 mr-2">✓</span>
-                        <span className="text-gray-700">{d.value}</span>
-                      </div>
-                    )
-                  })}
+                  {(() => {
+                    const compatibilitiesList = (Array.isArray(product.compatibilities)
+                      ? product.compatibilities
+                      : product.compatibilities
+                      ? [product.compatibilities]
+                      : []) as any[];
+                    return compatibilitiesList.map((compatibily: any) => {
+                      
+                      return (
+                        <div key={compatibily.id} className="flex items-center py-2">
+                          <span className="text-green-600 mr-2">✓</span>
+                          <span className="text-gray-700">{compatibily.value}</span>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
                 <p className="text-sm text-gray-600 mt-4">
                   * Esta lista no es exhaustiva. Si tu vehículo no aparece, contáctanos para verificar compatibilidad.

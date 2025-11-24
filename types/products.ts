@@ -42,6 +42,7 @@ export interface Product {
   images?: ProductImage[]
   features: ProductFeatureGroup[]
   deleted_images?: []
+  image: string
 }
 
 export interface ProductResponse extends Product {
@@ -56,4 +57,24 @@ export interface ProductResponse extends Product {
   in_stock: boolean
   images?: ProductImage[]
   features: ProductFeatureGroup[]
+  related: Product[]
+  original_price: number
+  brand_data: {
+    id: number
+    name: string
+  }
+  benefits: {
+    id: number
+    name: string
+    benefit_type: string
+  }
+  compatibilities: {
+    id: number
+    value: string
+  }
+  specifications: {
+    id: number
+    name: string
+    value: string
+  }
 }
