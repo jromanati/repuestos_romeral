@@ -169,9 +169,10 @@ export default function CartPage() {
         subtotal: subtotal,
         shippingCost: shippingCost,
         total: finalTotal,
-        // notes: customerData.comentarios,
         return_url: returnUrl,
         status_url: statusUrl,
+        order_number: "",
+        id: "",
       }
       const response = await createOrder(newCreateOrderPayload)
       if (response && response.data_web_pay) {

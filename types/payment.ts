@@ -118,12 +118,18 @@ export interface CreateOrderPayload {
   payment_method: PaymentMethodCode
   subtotal: number        // suma(price * quantity)
   shippingCost: number
-  total: number           // subtotal + shippingCost
-  notes?: string
-  return_url: string
-  status_url: string
-  order_number: string
+  total: number  | null | undefined         // subtotal + shippingCost
+  notes?: string | null | undefined
+  return_url: string | null | undefined
+  status_url: string | null | undefined
+  order_number: string | null | undefined
   id: string
+  data_web_pay?: {
+    url: string
+    token: string
+  }
+  payment_id?: string | null | undefined
+
 }
 
 /** (Opcional) Respuesta básica de creación de orden */
