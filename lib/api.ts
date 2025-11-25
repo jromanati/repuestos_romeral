@@ -16,7 +16,7 @@ class ApiClient {
   }
 
   setToken(token: string | null) {
-    localStorage.setItem('token', token)
+    localStorage.setItem('token', token || '')
     this.token = token
   }
 
@@ -25,11 +25,18 @@ class ApiClient {
     try {
       const url = `${this.baseUrl}${endpoint}`
 
-      const headers: Record<string, string> = {
+      const headers = new Headers({
         "Content-Type": "application/json",
         Accept: "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(options.headers || {}),
+      })
+
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`)
+      }
+
+      if (options.headers) {
+        const extra = new Headers(options.headers as HeadersInit)
+        extra.forEach((value, key) => headers.set(key, value))
       }
 
       const response = await fetch(url, {
