@@ -1,6 +1,8 @@
 import { apiClient, type ApiResponse } from "@/lib/api"
 import { AuthService } from "@/services/auth.service"
-import type { CreateOrderPayload, PaymentStatus, CreateOrderResponse, CreateReviewOrder} from "@/types/payment"
+import type { CreateOrderPayload, PaymentStatus, CreateOrderResponse, CreateReviewOrder,
+  Order
+} from "@/types/payment"
 
 export class PaymentService {
   // Obtener métodos de pago disponibles - DISABLED (using static methods)
@@ -15,8 +17,8 @@ export class PaymentService {
   }
 
   // Obtener detalles de una orden (requiere autenticación)
-  static async getOrder(orderId: string): Promise<ApiResponse<CreateOrderResponse>> {
-    return apiClient.get<CreateOrderResponse>(`orders/${orderId}`)
+  static async getOrder(orderId: string): Promise<ApiResponse<Order>> {
+    return apiClient.get<Order>(`orders/${orderId}`)
   }
 
   // Verificar estado del pago (requiere autenticación)

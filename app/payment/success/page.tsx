@@ -26,6 +26,7 @@ export default function PaymentSuccessPage() {
         const orderData = await getOrder(orderId)
 
         if (orderData) {
+          orderData.createdAt = new Date(orderData.createdAt).toISOString() 
           setOrder(orderData)
         } else {
           // Si no se puede cargar la orden, redirigir al inicio

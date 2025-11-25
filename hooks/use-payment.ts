@@ -71,7 +71,7 @@ export function usePayment() {
     }
   }
 
-  const getOrder = async (orderId: string): Promise<CreateOrderResponse | null> => {
+  const getOrder = async (orderId: string): Promise<Order | null> => {
     const isAuthenticated = await PaymentService.ensureAuthenticated()
     setIsAuthenticating(false)
 
