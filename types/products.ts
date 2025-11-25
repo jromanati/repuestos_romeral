@@ -27,7 +27,7 @@ export interface Product {
   name: string
   description?: string
   price: number
-  original_price: string
+  original_price: number
   rating: number
   stock: number
   sku: string
@@ -51,7 +51,7 @@ export interface ProductResponse {
   name: string
   description?: string
   price: number
-  original_price: string
+  original_price: number
   rating: number
   stock: number
   sku: string
