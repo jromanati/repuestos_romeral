@@ -43,22 +43,42 @@ export interface Product {
   features: ProductFeatureGroup[]
   deleted_images?: []
   image: string
+  category_name: string
 }
 
-export interface ProductResponse extends Product {
+export interface ProductResponse {
+  id: number
+  name: string
+  description?: string
+  price: number
+  original_price: string
+  rating: number
+  stock: number
+  sku: string
+  category: number
+  is_new: boolean
+  main_image?: string | null
+  is_active: boolean
+  created_at?: string
+  updated_at?: string
+  reviews: number
+  deleted_images?: []
+  image: string
   data: {
     products: [],
     categories: [],
     brands: [],
 
   }
+  products: [],
+  categories: [],
+  brands: [],
   category_name: string
   category_path: string
   in_stock: boolean
   images?: ProductImage[]
   features: ProductFeatureGroup[]
   related: Product[]
-  original_price: number
   brand_data: {
     id: number
     name: string

@@ -67,7 +67,7 @@ export function useProduct() {
       const response = await ProductService.getProducts()
 
       if (response.success && response.data) {
-        return response
+        return response.data 
       } else {
         setError(response.error || "Error al obtener el producto")
         return null

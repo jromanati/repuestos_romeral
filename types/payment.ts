@@ -122,6 +122,8 @@ export interface CreateOrderPayload {
   notes?: string
   return_url: string
   status_url: string
+  order_number: string
+  id: string
 }
 
 /** (Opcional) Respuesta básica de creación de orden */

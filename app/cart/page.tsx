@@ -23,7 +23,7 @@ import type {
 export default function CartPage() {
   const router = useRouter()
   const { items, subtotal, updateQty, removeItem, clear } = useCart()
-  const { createOrder, initiatePayment, isLoading, isAuthenticating, error } = usePayment()
+  const { createOrder, isLoading, isAuthenticating, error } = usePayment()
   
 
   const [paymentMethods] = useState<PaymentMethod[]>([

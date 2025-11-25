@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { PaymentService } from "@/services/payment.service"
-import type { CreateOrderRequest, Order, PaymentRequest, PaymentResponse, PaymentStatus } from "@/types/payment"
+import type { CreateOrderResponse, Order, PaymentRequest, PaymentResponse, PaymentStatus } from "@/types/payment"
 import type { CreateOrderPayload, CreateReviewOrder} from "@/types/payment"
 
 export function usePayment() {
@@ -10,7 +10,7 @@ export function usePayment() {
   const [isAuthenticating, setIsAuthenticating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const createOrder = async (orderData: CreateOrderPayload): Promise<Order | null> => {
+  const createOrder = async (orderData: CreateOrderPayload): Promise<CreateOrderPayload | null> => {
     setIsLoading(true)
     setIsAuthenticating(true)
     setError(null)
@@ -35,38 +35,6 @@ export function usePayment() {
       }
     } catch (err) {
       setError("Error inesperado al crear la orden")
-      return null
-    } finally {
-      setIsLoading(false)
-      setIsAuthenticating(false)
-    }
-  }
-
-  const initiatePayment = async (paymentData: PaymentRequest): Promise<PaymentResponse | null> => {
-    setIsLoading(true)
-    setIsAuthenticating(true)
-    setError(null)
-
-    try {
-      // Verificar autenticación antes de iniciar el pago
-      const isAuthenticated = await PaymentService.ensureAuthenticated()
-      setIsAuthenticating(false)
-
-      if (!isAuthenticated) {
-        setError("Error de autenticación del sistema")
-        return null
-      }
-
-      const response = await PaymentService.initiatePayment(paymentData)
-
-      if (response.success && response.data) {
-        return response.data
-      } else {
-        setError(response.error || "Error al iniciar el pago")
-        return null
-      }
-    } catch (err) {
-      setError("Error inesperado al procesar el pago")
       return null
     } finally {
       setIsLoading(false)
@@ -103,7 +71,7 @@ export function usePayment() {
     }
   }
 
-  const getOrder = async (orderId: string): Promise<Order | null> => {
+  const getOrder = async (orderId: string): Promise<CreateOrderResponse | null> => {
     const isAuthenticated = await PaymentService.ensureAuthenticated()
     setIsAuthenticating(false)
 
@@ -131,7 +99,9 @@ export function usePayment() {
     }
   }
 
-  const createReviewOrder = async (reviewOrderData: CreateReviewOrder): Promise<Order | null> => {
+  const createReviewOrder = async (
+    reviewOrderData: CreateReviewOrder
+  ): Promise<CreateReviewOrder | null> => {
     setIsLoading(true)
     setIsAuthenticating(true)
     setError(null)
@@ -147,8 +117,7 @@ export function usePayment() {
       }
 
       const response = await PaymentService.createReviewOrder(reviewOrderData)
-      console.log(response, 'response!!')
-      return response
+      return response.data || null
     } catch (err) {
       setError("Error inesperado al crear la review la orden")
       return null
@@ -163,7 +132,6 @@ export function usePayment() {
     isAuthenticating,
     error,
     createOrder,
-    initiatePayment,
     checkPaymentStatus,
     getOrder,
     createReviewOrder,

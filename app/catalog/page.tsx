@@ -66,9 +66,9 @@ export default function CatalogPage() {
     if (!isAuthenticated) return { products: [], categories: [], brands: [] }
 
     const resp = await getProducts()
-    const rawProducts = resp?.data?.products ?? []
-    const rawCategories = resp?.data?.categories ?? []
-    const rawBrands = resp?.data?.brands ?? []
+    const rawProducts = resp?.products ?? []
+    const rawCategories = resp?.categories ?? []
+    const rawBrands = resp?.brands ?? []
     return {
       products: rawProducts.map(mapProduct),
       categories: rawCategories.map(mapCategory),

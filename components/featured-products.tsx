@@ -56,7 +56,6 @@ const featuredProducts = [
 
 export default function FeaturedProducts() {
   const PLACEHOLDER = "/placeholder.svg?height=300&width=300"
-  // const { getProducts } = useProduct()
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("es-CL", {

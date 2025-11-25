@@ -19,11 +19,6 @@ export class PaymentService {
     return apiClient.get<CreateOrderResponse>(`orders/${orderId}`)
   }
 
-  // // Iniciar proceso de pago (requiere autenticación)
-  // static async initiatePayment(paymentData: PaymentRequest): Promise<ApiResponse<PaymentResponse>> {
-  //   return apiClient.post<PaymentResponse>("/payment/initiate", paymentData)
-  // }
-
   // Verificar estado del pago (requiere autenticación)
   static async getPaymentStatus(paymentId: string): Promise<ApiResponse<PaymentStatus>> {
     return apiClient.get<PaymentStatus>(`payments/${paymentId}/status/`)
@@ -31,7 +26,7 @@ export class PaymentService {
 
   static async createReviewOrder(orderData: CreateReviewOrder): Promise<ApiResponse<CreateReviewOrder>> {
     // La autenticación se maneja automáticamente en apiClient
-    return apiClient.post<CreateOrderPayload>("reviews/", orderData)
+    return apiClient.post<CreateReviewOrder>("reviews/", orderData)
   }
 
   // // Confirmar pago (requiere autenticación)

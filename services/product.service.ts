@@ -39,9 +39,11 @@ export interface ProductsResponse {
   totalPages: number
 }
 
+import type { ProductResponse} from "@/types/products"
+
 export class ProductService {
   // Obtener todos los productos con filtros
-  static async getProducts(filters: ProductFilters = {}, page = 1, limit = 20): Promise<ApiResponse<ProductsResponse>> {
+  static async getProducts(filters: ProductFilters = {}, page = 1, limit = 20): Promise<ApiResponse<ProductResponse>> {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
@@ -55,12 +57,12 @@ export class ProductService {
         {} as Record<string, string>,
       ),
     })
-    return apiClient.get<ProductsResponse>(`catalog`)
+    return apiClient.get<ProductResponse>(`catalog`)
   }
 
   // Obtener producto por ID
-  static async getProduct(id: number): Promise<ApiResponse<Product>> {
-    return apiClient.get<Product>(`products/${id}/update`)
+  static async getProduct(id: number): Promise<ApiResponse<ProductResponse>> {
+    return apiClient.get<ProductResponse>(`products/${id}/update`)
   }
 
   // Buscar productos
