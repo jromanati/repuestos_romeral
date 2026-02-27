@@ -54,7 +54,7 @@ export default function ContactoPage() {
       icon: Phone,
       title: "Teléfono",
       description: "Llamadas y WhatsApp",
-      value: "+56 9 6812 9078",
+      value: "+56968129078",
       action: () => window.open("tel:+56968129078"),
       color: "bg-green-100 text-green-600",
     },
@@ -71,8 +71,8 @@ export default function ContactoPage() {
       icon: Mail,
       title: "Email",
       description: "Consultas detalladas",
-      value: "ventas@repuestosromeral.cl",
-      action: () => window.open("mailto:ventas@repuestosromeral.cl"),
+      value: "repuestosromeral.mc@gmail.com",
+      action: () => window.open("mailto:repuestosromeral.mc@gmail.com"),
       color: "bg-blue-100 text-blue-600",
     },
     {
@@ -169,7 +169,8 @@ export default function ContactoPage() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">Horarios de Atención</h3>
-                      <p className="text-gray-600">Lun-Vie: 9:00-18:00 | Sáb: 9:00-13:00</p>
+                      <p className="text-gray-600">Lun-Vie: 09:30 a 13:30 / 15:00 a 19:00</p>
+                      <p className="text-gray-600">Sáb: 10:00 a 17:00</p>
                     </div>
                   </div>
 

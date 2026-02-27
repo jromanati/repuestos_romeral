@@ -6,7 +6,7 @@ import { MessageCircle, X } from "lucide-react"
 export default function WhatsAppButton() {
   const [isOpen, setIsOpen] = useState(false)
 
-  const whatsappNumber = "56912345678" // Número de WhatsApp sin el +
+  const whatsappNumber = "56968129078" // Número de WhatsApp sin el +
 
   const handleWhatsAppClick = (message: string) => {
     const encodedMessage = encodeURIComponent(message)

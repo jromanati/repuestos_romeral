@@ -72,13 +72,10 @@ export default function UbicacionPage() {
                       <h3 className="text-xl font-semibold text-gray-900 mb-2">Horarios de Atención</h3>
                       <div className="text-gray-700 space-y-1">
                         <p>
-                          <span className="font-medium">Lunes a Viernes:</span> 9:00 - 18:00
+                          <span className="font-medium">Lunes a Viernes:</span> 09:30 a 13:30 / 15:00 a 19:00
                         </p>
                         <p>
-                          <span className="font-medium">Sábados:</span> 9:00 - 13:00
-                        </p>
-                        <p>
-                          <span className="font-medium">Domingos:</span> Cerrado
+                          <span className="font-medium">Sábados:</span> 10:00 a 17:00
                         </p>
                       </div>
                     </div>

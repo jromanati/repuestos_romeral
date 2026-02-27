@@ -9,35 +9,38 @@ import { Button } from "@/components/ui/button"
 const slides = [
   {
     id: 1,
-    title: "Kits de Embrague Completos",
-    subtitle: "Rendimiento sin compromisos: kits de embrague completos para una transmisión perfecta.",
-    description: "Optimiza la experiencia de conducción con nuestros kits de embrague completos , diseñados para ofrecer un rendimiento excepcional y una transmisión suave en cualquier tipo de vehículo.",
-    image: "/images/kit_embriague.jpg?height=500&width=800",
-    cta: "Ver Kits",
-    link: "/catalog?category=embragues",
-    accent: "from-red-600 to-red-800",
+    title: "Herramientas y Equipamiento Automotriz",
+    subtitle: "Todo lo que necesitas para trabajar con precisión y confianza",
+    description:
+      "Encuentra una amplia variedad de herramientas manuales, llaves, alicates, dados, kits profesionales y accesorios diseñados para talleres mecánicos y uso profesional.",
+    image: "/images/image2.jpeg?height=1600&width=800",
+    cta: "Ver Herramientas",
+    link: "/catalog",
+    accent: "from-yellow-600 to-orange-700",
   },
   {
     id: 2,
-    title: "Pistones, anillos y componentes de motor",
-    subtitle: "Potencia y precisión: componentes esenciales para el corazón de tu motor",
-    description: "Descubre nuestra gama premium de pistones, anillos y componentes de motor , diseñados para maximizar el rendimiento y la eficiencia de cualquier tipo de motor",
-    image: "/images/pistones.jpg?height=500&width=800",
-    cta: "Ver Pistones",
-    link: "/catalog?category=filtros",
+    title: "Lubricantes, Aceites y Productos de Mantención",
+    subtitle: "Protección y rendimiento para cada motor",
+    description:
+      "Descubre nuestra línea completa de aceites, lubricantes, limpia frenos, siliconas, aditivos y productos especializados para el cuidado y mantención automotriz.",
+    image: "/images/image3.jpeg?height=500&width=800",
+    cta: "Ver Lubricantes",
+    link: "/catalog",
     accent: "from-blue-600 to-blue-800",
   },
   {
     id: 3,
-    title: "Pernos, tuercas, fijaciones y accesorios",
-    subtitle: "La base de tu proyecto: pernos, tuercas y fijaciones de máxima confianza",
-    description: "Descubre nuestra amplia selección de pernos, tuercas, fijaciones y accesorios , diseñados para ofrecer resistencia, precisión y seguridad en cada aplicación.",
-    image: "/images/pernos.jpg?height=500&width=800",
-    cta: "Ver Pernos",
-    link: "/catalog?category=sensores",
-    accent: "from-green-600 to-green-800",
+    title: "Equipos, Refrigerantes y Productos Técnicos",
+    subtitle: "Soluciones profesionales para tu taller o vehículo",
+    description:
+      "Compresores, gatos hidráulicos, refrigerantes, anticongelantes, DEF y productos técnicos esenciales para un servicio automotriz completo y eficiente.",
+    image: "/images/image4.jpeg?height=500&width=800",
+    cta: "Ver Productos",
+    link: "/catalog",
+    accent: "from-red-600 to-red-800",
   },
-]
+];
 
 export default function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -97,22 +100,15 @@ export default function Hero() {
                           size="lg"
                           className={`bg-gradient-to-r ${slide.accent} hover:shadow-lg transform hover:scale-105 transition-all duration-200 px-8 py-4 text-lg`}
                         >
-                          {slide.cta}
+                          Más Información
                         </Button>
                       </Link>
-                      <Button
-                        size="lg"
-                        variant="outline"
-                        className="border-white text-white hover:bg-white hover:text-gray-900 px-8 py-4 text-lg bg-transparent"
-                      >
-                        Más Información
-                      </Button>
                     </div>
                   </div>
 
                   {/* Imagen del producto */}
                   <div className="relative">
-                    <div className="relative w-full h-96 lg:h-[500px] rounded-2xl overflow-hidden shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500">
+                    <div className="relative w-full h-full lg:h-[800px] rounded-2xl overflow-hidden shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-800">
                       <Image
                         src={slide.image || "/placeholder.svg"}
                         alt={slide.title}

@@ -12,7 +12,7 @@ export default function AboutPage() {
       address: "Av. Libertad 1116 y 1024, Local 4, Romeral",
       phone: "+56 9 6812 9078",
       hours: "Lun-Vie: 9:00-18:00, Sáb: 9:00-13:00",
-      mapUrl: "https://maps.google.com/?q=Romeral+Chile",
+      mapUrl: "https://maps.app.goo.gl/4gmbV9XsR5LEmFw99",
     },
   ]
 
@@ -77,9 +77,9 @@ export default function AboutPage() {
                 </p>
               </div>
             </div>
-            <div className="relative lg:h-[500px] rounded-lg overflow-hidden">
+            <div className="relative lg:h-[800px] rounded-lg overflow-hidden">
               <Image
-                src="/images/quienes_somos.jpg?height=400&width=600&text=Historia+AutoPartes"
+                src="/images/image1.jpeg?height=400&width=600&text=Historia+AutoPartes"
                 alt="Historia de AutoPartes Chile"
                 fill
                 className="object-cover"
@@ -185,7 +185,7 @@ export default function AboutPage() {
       </section>
 
       {/* Ubicaciones */}
-      <section className="py-16">
+      {/* <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Nuestras Sucursales</h2>
@@ -228,10 +228,10 @@ export default function AboutPage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Contacto */}
-      <section className="py-16 bg-blue-600">
+      {/* <section className="py-16 bg-blue-600">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">¿Tienes Preguntas?</h2>
           <p className="text-xl text-blue-100 mb-8">Nuestro equipo está listo para ayudarte con cualquier consulta</p>
@@ -251,7 +251,7 @@ export default function AboutPage() {
             </Button>
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   )
 }

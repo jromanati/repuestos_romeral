@@ -30,7 +30,7 @@ export default function ContactSection() {
             <CardContent className="p-6">
               <Mail className="w-12 h-12 text-blue-600 mx-auto mb-4" />
               <h3 className="font-semibold text-gray-900 mb-2">Email</h3>
-              <p className="text-gray-600 mb-4">ventas@repuestosromeral.cl</p>
+              <p className="text-gray-600 mb-4">repuestosromeral.mc@gmail.com</p>
               <Button variant="outline" size="sm">
                 Enviar Email
               </Button>

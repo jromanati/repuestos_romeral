@@ -17,7 +17,7 @@ export default function Footer() {
               <Facebook className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer" />
               <Instagram className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer" />
               <Twitter className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer" />
-              <Youtube className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer" />
+              {/* <Youtube className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer" /> */}
             </div>
           </div>
 
@@ -90,10 +90,10 @@ export default function Footer() {
             <h4 className="text-lg font-semibold mb-4">Contacto</h4>
             <div className="space-y-2 text-gray-300">
               <p>📞 +56 9 6812 9078</p>
-              <p>✉️ ventas@repuestosromeral.cl</p>
+              <p>✉️ repuestosromeral.mc@gmail.com</p>
               <p>📍 Av. Libertad 1116 y 1024, Local 4 – Romeral</p>
-              <p>🕒 Lun-Vie: 9:00-18:00</p>
-              <p>🕒 Sáb: 9:00-13:00</p>
+              <p>🕒 Lun-Vie: 09:30 a 13:30 / 15:00 a 19:00</p>
+              <p>🕒 Sáb: 10:00 a 17:00</p>
             </div>
           </div>
         </div>
