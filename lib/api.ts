@@ -90,5 +90,5 @@ class ApiClient {
   }
 }
 // npm run dev -- --port 3001 --hostname base.localhost
-// export const apiClient = new ApiClient(API_BASE_URL)
-export const apiClient = new ApiClient("https://repuestosromeral.sitios.softwarelabs.cl/api/")
+export const apiClient = new ApiClient(API_BASE_URL)
+// export const apiClient = new ApiClient("https://repuestosromeral.sitios.softwarelabs.cl/api/")

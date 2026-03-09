@@ -15,44 +15,49 @@ export default function PagoResultado() {
   const searchParams = useSearchParams()
   // const [status, setStatus] = useState<"success" | "error" | "cancelled" | null>(null)
   const [transactionId, setTransactionId] = useState<string | null>(null)
-  const { checkPaymentStatus, isLoading } = usePayment()
+  const { checkPaymentStatus, searchPaymentByOrderNumber, isLoading } = usePayment()
   const [status, setStatus] = useState<string | null>(null)
   const router = useRouter()
   const { clear } = useCart()
   useEffect(() => {
     const fetchPaymentStatus = async () => {
-      const paymentId = localStorage.getItem("payment_id")
-      if (!paymentId){
-        clear()
-        router.push(`/carrito`)
-      }
-      else {
-        const response = await checkPaymentStatus(paymentId)
-        if (response && response.data_web_pay) {
-          const dataWebPay = response.data_web_pay
-          if (dataWebPay) {
-            setStatus(dataWebPay.status)
-          }
-          else{
-            setStatus("FAILED")
-          }
+      const externalReference = searchParams.get("external_reference")
+      const paymentIdFromQuery = searchParams.get("payment_id")
+      const paymentIdFromStorage = localStorage.getItem("payment_id")
 
+      if (externalReference) {
+        const response = await searchPaymentByOrderNumber(externalReference)
+        if (response?.status) {
+          setStatus(response.status)
+        } else {
+          setStatus("FAILED")
         }
-        
-        clear();
-        localStorage.setItem("payment_id", "")
-        // setTimeout(() => {
-        //   router.push(`/tienda`)
-        // }, 10000) 
+      } else {
+        const paymentId = paymentIdFromQuery || paymentIdFromStorage
+        if (!paymentId) {
+          clear()
+          router.push(`/carrito`)
+          return
+        }
+
+        const response = await checkPaymentStatus(paymentId)
+        if (response?.status) {
+          setStatus(response.status)
+        } else {
+          setStatus("FAILED")
+        }
       }
+
+      clear()
+      localStorage.setItem("payment_id", "")
     }
 
     fetchPaymentStatus()
-  }, [])  // 👈 ejecuta solo al montar
+  }, [checkPaymentStatus, clear, router, searchParams, searchPaymentByOrderNumber])  // 👈 ejecuta solo al montar
 
   const getStatusConfig = () => {
     switch (status) {
-      case "AUTHORIZED":
+      case "approved":
         return {
           icon: CheckCircle,
           title: "¡PAGO EXITOSO!",

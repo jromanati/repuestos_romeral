@@ -412,8 +412,7 @@ function RevisionOrdenContent() {
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-400">Método de pago:</span>
                       <span className="text-green-400 font-bold">
-                        {/* {orderData.paymentMethod} */}
-                        WebPay Plus
+                        {orderData.paymentMethod || "MercadoPago"}
                       </span>
                     </div>
                     {/* <div className="flex justify-between text-sm">

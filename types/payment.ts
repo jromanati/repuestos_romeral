@@ -2,7 +2,7 @@
 export interface PaymentMethod {
   id: string
   name: string
-  type: "webpay" | "transfer" | "cash"
+  type: "webpay" | "mercadopago" | "transfer" | "cash"
   enabled: boolean
   description?: string
 }
@@ -90,8 +90,30 @@ export interface PaymentStatus {
   }
 }
 
+export interface PaymentSearchResult {
+  payment_id: string
+  status: "pending" | "approved" | "rejected" | "cancelled" | string
+  order_number?: string
+}
+
 /** Métodos de pago aceptados por el backend */
-export type PaymentMethodCode = "webpay" | "transfer" | "cash"
+export type PaymentMethodCode = "webpay" | "mercadopago" | "transfer" | "cash"
+
+export interface MercadoPagoRedirectData {
+  preference_id: string
+  init_point: string
+}
+
+export interface CreateOrderResult {
+  order_id: number
+  payment_id: string
+  provider: "mercadopago" | "webpay" | string
+  redirect_data?: MercadoPagoRedirectData
+  data_web_pay?: {
+    url: string
+    token: string
+  }
+}
 
 export interface CreateOrderItem {
   product_id: number

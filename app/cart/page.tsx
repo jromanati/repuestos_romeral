@@ -17,13 +17,14 @@ import { usePayment } from "@/hooks/use-payment"
 import type { PaymentMethod, CreateOrderRequest, ShippingAddress } from "@/types/payment"
 import { PaymentService } from "@/services/payment.service"
 import type {
-  CreateOrderPayload, CreateShippingAddress, CreateOrderItem
+  CreateOrderPayload, CreateShippingAddress, CreateOrderItem, CreateOrderResult
 } from "@/types/payment"
 
 export default function CartPage() {
   const router = useRouter()
   const { items, subtotal, updateQty, removeItem, clear } = useCart()
   const { createOrder, isLoading, isAuthenticating, error } = usePayment()
+  const useMockMercadoPagoOrder = process.env.NEXT_PUBLIC_MOCK_MP_ORDER === "true"
   
 
   const [paymentMethods] = useState<PaymentMethod[]>([
@@ -160,12 +161,12 @@ export default function CartPage() {
         price: item.price,
         quantity: item.quantity,
       }))
-      const returnUrl = `${window.location.origin}/success`
-      const statusUrl = `${window.location.origin}/revision-orden`
+      const returnUrl = `https://repuestos-romeral.vercel.app/success`
+      const statusUrl = `https://repuestos-romeral.vercel.app/revision-orden`
       const newCreateOrderPayload: CreateOrderPayload = {
         items: newCreateOrderItem,
         shippingAddress: newShippingAddress,
-        payment_method: "webpay",
+        payment_method: "mercadopago",
         subtotal: subtotal,
         shippingCost: shippingCost,
         total: finalTotal,
@@ -174,17 +175,39 @@ export default function CartPage() {
         order_number: "",
         id: "",
       }
-      const response = await createOrder(newCreateOrderPayload)
-      if (response && response.data_web_pay) {
-        // Ensure we always store a string in localStorage (avoid undefined/null)
-        localStorage.setItem("payment_id", String(response.payment_id ?? ""))
-        if (response.data_web_pay.url && response.data_web_pay.token) {
-          window.location.href = `${response.data_web_pay.url}?token_ws=${response.data_web_pay.token}`
-          return
-        } else {
-          throw new Error("Respuesta inválida de Webpay")
-        }
+      const mockResponse: CreateOrderResult = {
+        order_id: 7,
+        payment_id: "e5c74b1c-cb69-4f29-bb24-0da8f7557402",
+        provider: "mercadopago",
+        redirect_data: {
+          preference_id: "3243326856-978ef96f-0cfa-4c90-b56f-fe56862bebb8",
+          init_point:
+            "https://www.mercadopago.cl/checkout/v1/redirect?pref_id=3243326856-978ef96f-0cfa-4c90-b56f-fe56862bebb8",
+        },
       }
+
+      const response = useMockMercadoPagoOrder
+        ? await (async () => {
+            await new Promise((r) => setTimeout(r, 250))
+            return mockResponse
+          })()
+        : await createOrder(newCreateOrderPayload)
+      if (!response) return
+
+      localStorage.setItem("payment_id", String(response.payment_id ?? ""))
+      localStorage.setItem("order_id", String(response.order_id ?? ""))
+
+      if (response.redirect_data?.init_point) {
+        window.location.href = response.redirect_data.init_point
+        return
+      }
+
+      if (response.data_web_pay?.url && response.data_web_pay?.token) {
+        window.location.href = `${response.data_web_pay.url}?token_ws=${response.data_web_pay.token}`
+        return
+      }
+
+      throw new Error("Respuesta inválida del proveedor de pago")
       /*setCustomerData({
         nombre: "",
         email: "",

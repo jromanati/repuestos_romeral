@@ -1,7 +1,9 @@
 import { apiClient, type ApiResponse } from "@/lib/api"
 import { AuthService } from "@/services/auth.service"
 import type { CreateOrderPayload, PaymentStatus, CreateOrderResponse, CreateReviewOrder,
-  Order
+  Order,
+  CreateOrderResult,
+  PaymentSearchResult
 } from "@/types/payment"
 
 export class PaymentService {
@@ -11,9 +13,9 @@ export class PaymentService {
   // }
 
   // Crear una nueva orden (requiere autenticación)
-  static async createOrder(orderData: CreateOrderPayload): Promise<ApiResponse<CreateOrderPayload>> {
+  static async createOrder(orderData: CreateOrderPayload): Promise<ApiResponse<CreateOrderResult>> {
     // La autenticación se maneja automáticamente en apiClient
-    return apiClient.post<CreateOrderPayload>("orders/", orderData)
+    return apiClient.post<CreateOrderResult>("orders/", orderData)
   }
 
   // Obtener detalles de una orden (requiere autenticación)
@@ -24,6 +26,10 @@ export class PaymentService {
   // Verificar estado del pago (requiere autenticación)
   static async getPaymentStatus(paymentId: string): Promise<ApiResponse<PaymentStatus>> {
     return apiClient.get<PaymentStatus>(`payments/${paymentId}/status/`)
+  }
+
+  static async searchPaymentByOrderNumber(orderNumber: string): Promise<ApiResponse<PaymentSearchResult>> {
+    return apiClient.get<PaymentSearchResult>(`payments/search/?external_reference=${encodeURIComponent(orderNumber)}`)
   }
 
   static async createReviewOrder(orderData: CreateReviewOrder): Promise<ApiResponse<CreateReviewOrder>> {

@@ -3,14 +3,41 @@
 import { useState } from "react"
 import { PaymentService } from "@/services/payment.service"
 import type { CreateOrderResponse, Order, PaymentRequest, PaymentResponse, PaymentStatus } from "@/types/payment"
-import type { CreateOrderPayload, CreateReviewOrder} from "@/types/payment"
+import type { CreateOrderPayload, CreateReviewOrder, CreateOrderResult, PaymentSearchResult } from "@/types/payment"
 
 export function usePayment() {
   const [isLoading, setIsLoading] = useState(false)
   const [isAuthenticating, setIsAuthenticating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const createOrder = async (orderData: CreateOrderPayload): Promise<CreateOrderPayload | null> => {
+  const searchPaymentByOrderNumber = async (orderNumber: string): Promise<PaymentSearchResult | null> => {
+    const isAuthenticated = await PaymentService.ensureAuthenticated()
+    setIsAuthenticating(false)
+
+    if (!isAuthenticated) {
+      setError("Error de autenticación del sistema")
+      return null
+    }
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const response = await PaymentService.searchPaymentByOrderNumber(orderNumber)
+      if (response.success && response.data) {
+        return response.data
+      }
+      setError(response.error || "Error al buscar el pago")
+      return null
+    } catch (err) {
+      setError("Error inesperado al buscar el pago")
+      return null
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const createOrder = async (orderData: CreateOrderPayload): Promise<CreateOrderResult | null> => {
     setIsLoading(true)
     setIsAuthenticating(true)
     setError(null)
@@ -133,6 +160,7 @@ export function usePayment() {
     error,
     createOrder,
     checkPaymentStatus,
+    searchPaymentByOrderNumber,
     getOrder,
     createReviewOrder,
     clearError: () => setError(null),
