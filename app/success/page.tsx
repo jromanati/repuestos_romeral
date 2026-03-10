@@ -22,11 +22,11 @@ export default function PagoResultado() {
   useEffect(() => {
     const fetchPaymentStatus = async () => {
       const paymentId = localStorage.getItem("payment_id")
-      // if (!paymentId) {
-      //   clear()
-      //   router.push(`/carrito`)
-      //   return
-      // }
+      if (!paymentId) {
+        clear()
+        router.push(`/carrito`)
+        return
+      }
 
       const response = await checkPaymentStatus(paymentId)
       if (response?.status) {
