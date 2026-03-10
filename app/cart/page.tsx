@@ -16,6 +16,7 @@ import { useCart } from "@/hooks/use-cart"
 import { usePayment } from "@/hooks/use-payment"
 import type { PaymentMethod, CreateOrderRequest, ShippingAddress } from "@/types/payment"
 import { PaymentService } from "@/services/payment.service"
+import { CHILE_COMMUNES_BY_REGION } from "@/lib/chile-locations"
 import type {
   CreateOrderPayload, CreateShippingAddress, CreateOrderItem, CreateOrderResult
 } from "@/types/payment"
@@ -79,6 +80,10 @@ export default function CartPage() {
 
   const handleInputChange = (field: string, value: string) => {
     setOrderData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleRegionChange = (value: string) => {
+    setOrderData((prev) => ({ ...prev, region: value, city: "" }))
   }
 
   const validateForm = (): boolean => {
@@ -161,8 +166,8 @@ export default function CartPage() {
         price: item.price,
         quantity: item.quantity,
       }))
-      const returnUrl = `https://repuestos-romeral.vercel.app/success`
-      const statusUrl = `https://repuestos-romeral.vercel.app/revision-orden`
+      const returnUrl = `${window.location.origin}/success`
+      const statusUrl = `${window.location.origin}/revision-orden`
       const newCreateOrderPayload: CreateOrderPayload = {
         items: newCreateOrderItem,
         shippingAddress: newShippingAddress,
@@ -446,7 +451,7 @@ export default function CartPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="region">Región *</Label>
-                  <Select value={orderData.region} onValueChange={(value) => handleInputChange("region", value)}>
+                  <Select value={orderData.region} onValueChange={handleRegionChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar región" />
                     </SelectTrigger>
@@ -471,13 +476,26 @@ export default function CartPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="city">Ciudad *</Label>
-                  <Input
-                    id="city"
+                  <Label htmlFor="city">Comuna *</Label>
+                  <Select
                     value={orderData.city}
-                    onChange={(e) => handleInputChange("city", e.target.value)}
-                    required
-                  />
+                    onValueChange={(value) => handleInputChange("city", value)}
+                    disabled={!orderData.region}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={orderData.region ? "Seleccionar comuna" : "Selecciona una región"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(orderData.region &&
+                        CHILE_COMMUNES_BY_REGION[orderData.region as keyof typeof CHILE_COMMUNES_BY_REGION]?.map(
+                          (commune) => (
+                            <SelectItem key={commune} value={commune}>
+                              {commune}
+                            </SelectItem>
+                          )
+                        )) || null}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

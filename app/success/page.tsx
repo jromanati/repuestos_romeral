@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -19,28 +19,46 @@ export default function PagoResultado() {
   const [status, setStatus] = useState<string | null>(null)
   const router = useRouter()
   const { clear } = useCart()
-  useEffect(() => {
-    const fetchPaymentStatus = async () => {
-      const paymentId = localStorage.getItem("payment_id")
-      if (!paymentId) {
-        clear()
-        router.push(`/carrito`)
-        return
-      }
 
-      const response = await checkPaymentStatus(paymentId)
-      if (response?.status) {
-        setStatus(response.status)
-      } else {
+  const hasRunRef = useRef(false)
+  const clearRef = useRef(clear)
+  const checkPaymentStatusRef = useRef(checkPaymentStatus)
+
+  useEffect(() => {
+    clearRef.current = clear
+  }, [clear])
+
+  useEffect(() => {
+    checkPaymentStatusRef.current = checkPaymentStatus
+  }, [checkPaymentStatus])
+
+  useEffect(() => {
+    if (hasRunRef.current) return
+    hasRunRef.current = true
+
+    ;(async () => {
+      try {
+        const paymentId = localStorage.getItem("payment_id")
+        if (!paymentId) {
+          clearRef.current()
+          router.push(`/carrito`)
+          return
+        }
+
+        const response = await checkPaymentStatusRef.current(paymentId)
+        if (response?.status) {
+          setStatus(response.status)
+        } else {
+          setStatus("FAILED")
+        }
+
+        clearRef.current()
+        localStorage.setItem("payment_id", "")
+      } catch (e) {
         setStatus("FAILED")
       }
-
-      clear()
-      localStorage.setItem("payment_id", "")
-    }
-
-    fetchPaymentStatus()
-  }, [checkPaymentStatus, clear, router])  // 👈 ejecuta solo al montar
+    })()
+  }, [router])  // 👈 ejecuta solo al montar
 
   const getStatusConfig = () => {
     switch (status) {
