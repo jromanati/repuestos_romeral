@@ -16,6 +16,7 @@ import {
   ShoppingCart,
   Package,
   CheckCircle,
+  AlertCircle,
   Clock,
   Truck,
   ArrowLeft,
@@ -150,6 +151,8 @@ function RevisionOrdenContent() {
         return { label: "Enviado", color: "bg-green-500", icon: Truck, description: "Tu pedido está en camino" }
       case "delivered":
         return { label: "Entregado", color: "bg-green-600", icon: Package, description: "Tu pedido ha sido entregado" }
+      case "cancelled":
+        return { label: "Cancelado", color: "bg-red-600", icon: AlertCircle, description: "No se pudo procesar el pago y la orden fue cancelada" }
       default:
         return { label: "Desconocido", color: "bg-gray-500", icon: Clock, description: "Estado desconocido" }
     }
@@ -194,6 +197,8 @@ function RevisionOrdenContent() {
         return { label: "Enviado", color: "bg-green-500", icon: Truck }
       case "delivered":
         return { label: "Entregado", color: "bg-green-600", icon: Package }
+      case "cancelled":
+        return { label: "Pago Cancelado", color: "bg-red-600", icon: AlertCircle }
       default:
         return { label: "Desconocido", color: "bg-gray-500", icon: Clock }
     }

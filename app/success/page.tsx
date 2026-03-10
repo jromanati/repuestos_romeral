@@ -36,7 +36,7 @@ export default function PagoResultado() {
       }
 
       clear()
-      // localStorage.setItem("payment_id", "")
+      localStorage.setItem("payment_id", "")
     }
 
     fetchPaymentStatus()
