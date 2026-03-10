@@ -15,45 +15,32 @@ export default function PagoResultado() {
   const searchParams = useSearchParams()
   // const [status, setStatus] = useState<"success" | "error" | "cancelled" | null>(null)
   const [transactionId, setTransactionId] = useState<string | null>(null)
-  const { checkPaymentStatus, searchPaymentByOrderNumber, isLoading } = usePayment()
+  const { checkPaymentStatus, isLoading } = usePayment()
   const [status, setStatus] = useState<string | null>(null)
   const router = useRouter()
   const { clear } = useCart()
   useEffect(() => {
     const fetchPaymentStatus = async () => {
-      const externalReference = searchParams.get("external_reference")
-      const paymentIdFromQuery = searchParams.get("payment_id")
-      const paymentIdFromStorage = localStorage.getItem("payment_id")
+      const paymentId = localStorage.getItem("payment_id")
+      // if (!paymentId) {
+      //   clear()
+      //   router.push(`/carrito`)
+      //   return
+      // }
 
-      if (externalReference) {
-        const response = await searchPaymentByOrderNumber(externalReference)
-        if (response?.status) {
-          setStatus(response.status)
-        } else {
-          setStatus("FAILED")
-        }
+      const response = await checkPaymentStatus(paymentId)
+      if (response?.status) {
+        setStatus(response.status)
       } else {
-        const paymentId = paymentIdFromQuery || paymentIdFromStorage
-        if (!paymentId) {
-          clear()
-          router.push(`/carrito`)
-          return
-        }
-
-        const response = await checkPaymentStatus(paymentId)
-        if (response?.status) {
-          setStatus(response.status)
-        } else {
-          setStatus("FAILED")
-        }
+        setStatus("FAILED")
       }
 
       clear()
-      localStorage.setItem("payment_id", "")
+      // localStorage.setItem("payment_id", "")
     }
 
     fetchPaymentStatus()
-  }, [checkPaymentStatus, clear, router, searchParams, searchPaymentByOrderNumber])  // 👈 ejecuta solo al montar
+  }, [checkPaymentStatus, clear, router])  // 👈 ejecuta solo al montar
 
   const getStatusConfig = () => {
     switch (status) {
