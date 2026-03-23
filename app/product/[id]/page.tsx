@@ -118,7 +118,6 @@ export default function ProductPage() {
 
   const handleAddToCart = (product: any) => {
     // construir opciones elegidas para el carrito
-    console.log("Agregar al carrito:", product, "Cantidad:", quantity)
     clear()
     addItem({
       id: product.id,
@@ -148,7 +147,6 @@ export default function ProductPage() {
       if (productId) {
         const productData = await getProduct(productId)
         if (productData) {
-          console.log("Producto cargado:", productData)
           setProductData(productData)
           setrelatedProducts(productData.related.map(mapRelatedProduct))
         } else {

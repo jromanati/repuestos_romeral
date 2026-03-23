@@ -115,7 +115,6 @@ export function usePayment() {
         return response.data
       } else {
         setError(response.error || "Error al obtener la orden")
-        console.log(response.error, 'aja')
         return null
       }
     } catch (err) {

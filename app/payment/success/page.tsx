@@ -20,7 +20,6 @@ export default function PaymentSuccessPage() {
 
   useEffect(() => {
     const loadOrder = async () => {
-      console.log(searchParams, 'searchParams')
       if (orderId) {
         // const orderData = await getOrder(orderId)
         const orderData = await getOrder(orderId)

@@ -57,6 +57,7 @@ const firstImageUrl = (images?: Product["images"]): string | undefined => {
 
 export default function Hero({ products }: HeroProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [touchStartX, setTouchStartX] = useState<number | null>(null)
 
   const truncate = (text: string | undefined, max: number) => {
     if (!text) return ""
@@ -125,6 +126,31 @@ export default function Hero({ products }: HeroProps) {
     setCurrentSlide(prev => (prev - 1 + slides.length) % slides.length)
   }
 
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length > 0) {
+      setTouchStartX(e.touches[0].clientX)
+    }
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (touchStartX === null) return
+    if (e.changedTouches.length === 0) return
+
+    const endX = e.changedTouches[0].clientX
+    const diff = endX - touchStartX
+    const threshold = 40
+
+    if (Math.abs(diff) > threshold) {
+      if (diff < 0) {
+        nextSlide()
+      } else {
+        prevSlide()
+      }
+    }
+
+    setTouchStartX(null)
+  }
+
   // Mientras no haya slides (por ejemplo, catálogo cargando), mostramos un loader simple
   if (!slides.length) {
     return (
@@ -149,7 +175,11 @@ export default function Hero({ products }: HeroProps) {
         </div>
 
         {/* Slider de productos */}
-        <div className="relative h-[70vh] lg:h-screen">
+        <div
+          className="relative h-[70vh] lg:h-screen"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           {slides.map((slide, index) => (
             <div
               key={slide.id}
@@ -221,14 +251,16 @@ export default function Hero({ products }: HeroProps) {
           ))}
         </div>
 
-        {/* Controles del slider (solo desktop) */}
-        <div className="hidden md:flex absolute bottom-8 left-1/2 transform -translate-x-1/2 space-x-3">
+        {/* Controles del slider (puntos indicadores) */}
+        <div className="flex absolute bottom-6 left-1/2 transform -translate-x-1/2 space-x-2 md:space-x-3">
           {slides.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
-              className={`w-4 h-4 rounded-full transition-all duration-300 ${
-                index === currentSlide ? "bg-red-600 scale-125" : "bg-white bg-opacity-50 hover:bg-opacity-75"
+              className={`w-2.5 h-2.5 md:w-4 md:h-4 rounded-full transition-all duration-300 ${
+                index === currentSlide
+                  ? "bg-red-600 scale-110 md:scale-125"
+                  : "bg-white bg-opacity-50 hover:bg-opacity-75"
               }`}
             />
           ))}

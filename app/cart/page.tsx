@@ -121,7 +121,6 @@ export default function CartPage() {
           }),
         })
         const data = await res.json()
-        console.log(data, 'data')
         if (!res.ok) throw new Error(data.error || "Error al iniciar pago con Webpay")
         if (data.url && data.token) {
           window.location.href = `${data.url}?token_ws=${data.token}`

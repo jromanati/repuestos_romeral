@@ -122,7 +122,6 @@ export default function CatalogPage() {
           product.name.toLowerCase().includes(searchLower)
         )
       }
-      console.log("Category IDs for Products:", categoryIdsForProducts)
     }
 
     
