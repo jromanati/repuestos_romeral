@@ -113,7 +113,7 @@ export default function AsesoriaTecnicaPage() {
               <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8 rounded-2xl shadow-xl">
                 <div className="flex items-center space-x-4 mb-4">
                   <div className="bg-white bg-opacity-20 p-3 rounded-full">
-                    <MessageCircle className="w-8 h-8" />
+                    <Image src="/images/whatsapp_icon.png" alt="WhatsApp" width={28} height={28} className="w-7 h-7" />
                   </div>
                   <h3 className="text-xl font-bold">Consulta Gratuita</h3>
                 </div>
@@ -217,7 +217,7 @@ export default function AsesoriaTecnicaPage() {
                   )
                 }
               >
-                <MessageCircle className="w-5 h-5 mr-2" />
+                <Image src="/images/whatsapp_icon.png" alt="WhatsApp" width={28} height={28} className="w-7 h-7" />
                 Consultar por WhatsApp
               </Button>
               <Button

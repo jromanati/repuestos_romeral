@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight, MessageCircle, Star, Zap, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import type { Product } from "@/types/products"
 
-const slides = [
+const staticSlides = [
   {
     id: 1,
     title: "Herramientas y Equipamiento Automotriz",
@@ -40,30 +41,106 @@ const slides = [
     link: "/catalog",
     accent: "from-red-600 to-red-800",
   },
-];
+]
 
-export default function Hero() {
+type HeroProps = {
+  products: Product[]
+}
+
+const firstImageUrl = (images?: Product["images"]): string | undefined => {
+  if (!Array.isArray(images) || images.length === 0) return undefined
+  const first = images[0]
+  if (!first) return undefined
+  if (typeof (first as any) === "string") return first as any
+  return (first as any).url
+}
+
+export default function Hero({ products }: HeroProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
 
+  const truncate = (text: string | undefined, max: number) => {
+    if (!text) return ""
+    if (text.length <= max) return text
+    const shortened = text.slice(0, max)
+    // Buscar el último espacio antes del límite
+    const lastSpaceIndex = shortened.lastIndexOf(" ")
+    if (lastSpaceIndex === -1) {
+      // No hay espacios (por ejemplo una sola palabra muy larga): corta normal
+      return shortened.trimEnd() + "..."
+    }
+    return shortened.slice(0, lastSpaceIndex).trimEnd() + "..."
+  }
+
+  const slides = useMemo(() => {
+    const hasProducts = Array.isArray(products) && products.length > 0
+
+    const productSlides = (products || [])
+      .filter(p => p.is_new)
+      .map(p => {
+        const image = p.main_image || firstImageUrl(p.images)
+        if (!image) return null
+
+        return {
+          id: p.id,
+          title: p.name,
+          subtitle: p.category_name,
+          description: p.description || "",
+          image,
+          cta: "Ver producto",
+          link: `/product/${p.id}`,
+          accent: "from-red-600 to-red-800",
+        }
+      })
+      .filter(Boolean) as typeof staticSlides
+
+    const valid = productSlides.slice(0, 5)
+
+    // Si aún no hay productos cargados o el filtro no dejó ningún producto nuevo con imagen,
+    // no mostramos slides (evitamos usar solo slides estáticos)
+    if (!hasProducts || valid.length === 0) return []
+
+    if (valid.length >= 5) return valid
+
+    const needed = 5 - valid.length
+    const fallback = staticSlides.slice(0, needed).map((s, idx) => ({
+      ...s,
+      id: 1000 + s.id + idx,
+    }))
+    return [...valid, ...fallback]
+  }, [products])
+
   useEffect(() => {
+    if (!slides.length) return
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length)
+      setCurrentSlide(prev => (prev + 1) % slides.length)
     }, 9000)
     return () => clearInterval(timer)
-  }, [])
+  }, [slides.length])
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length)
+    setCurrentSlide(prev => (prev + 1) % slides.length)
   }
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
+    setCurrentSlide(prev => (prev - 1 + slides.length) % slides.length)
+  }
+
+  // Mientras no haya slides (por ejemplo, catálogo cargando), mostramos un loader simple
+  if (!slides.length) {
+    return (
+      <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+        <div className="flex flex-col items-center text-white">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-red-500 mb-4" />
+          <p className="text-sm text-gray-300 uppercase tracking-[0.25em]">Cargando productos destacados...</p>
+        </div>
+      </section>
+    )
   }
 
   return (
     <>
       {/* Hero principal con diseño innovador */}
-      <section className="relative min-h-screen overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+      <section className="relative min-h-[70vh] lg:min-h-screen overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black">
         {/* Formas geométricas de fondo */}
         <div className="absolute inset-0">
           <div className="absolute top-20 left-10 w-72 h-72 bg-red-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
@@ -72,26 +149,45 @@ export default function Hero() {
         </div>
 
         {/* Slider de productos */}
-        <div className="relative h-screen">
+        <div className="relative h-[70vh] lg:h-screen">
           {slides.map((slide, index) => (
             <div
               key={slide.id}
               className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
-                index === currentSlide ? "opacity-100 scale-100" : "opacity-0 scale-105"
+                index === currentSlide
+                  ? "opacity-100 scale-100 pointer-events-auto"
+                  : "opacity-0 scale-105 pointer-events-none"
               }`}
             >
-              <div className="container mx-auto px-4 h-full flex items-center">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full">
+              {/* Fondo de imagen para mobile */}
+              {slide.image && (
+                <div className="absolute inset-0 lg:hidden">
+                  <Image
+                    src={slide.image}
+                    alt={slide.title}
+                    fill
+                    className="object-cover opacity-40"
+                    priority={index === 0}
+                  />
+                  <div className={`absolute inset-0 bg-gradient-to-t from-black/70 via-black/60 to-transparent`} />
+                </div>
+              )}
+
+              <div className="container mx-auto px-4 h-full flex items-start lg:items-center pt-16 lg:pt-0">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start lg:items-center w-full">
                   {/* Contenido de texto */}
-                  <div className="text-white space-y-8 z-10">
-                    <div className="space-y-4">
+                  <div className="text-white space-y-6 z-10">
+                    <div className="space-y-2">
                       <div
                         className={`inline-block px-4 py-2 rounded-full bg-gradient-to-r ${slide.accent} text-sm font-medium`}
                       >
                         {slide.subtitle}
                       </div>
-                      <h1 className="text-4xl md:text-6xl font-bold leading-tight">{slide.title}</h1>
-                      <p className="text-xl text-gray-300 leading-relaxed max-w-lg">{slide.description}</p>
+                      <h1 className="text-3xl md:text-6xl font-bold leading-tight">{slide.title}</h1>
+                      {/* Descripción truncada en mobile y desktop */}
+                      <p className="text-base md:text-xl text-gray-300 leading-relaxed max-w-lg">
+                        {truncate(slide.description, 290)}
+                      </p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4">
@@ -100,14 +196,14 @@ export default function Hero() {
                           size="lg"
                           className={`bg-gradient-to-r ${slide.accent} hover:shadow-lg transform hover:scale-105 transition-all duration-200 px-8 py-4 text-lg`}
                         >
-                          Más Información
+                          {slide.cta || "Más Información"}
                         </Button>
                       </Link>
                     </div>
                   </div>
 
-                  {/* Imagen del producto */}
-                  <div className="relative">
+                  {/* Imagen del producto (solo visible en pantallas grandes) */}
+                  <div className="relative hidden lg:block">
                     <div className="relative w-full h-full lg:h-[800px] rounded-2xl overflow-hidden shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-800">
                       <Image
                         src={slide.image || "/placeholder.svg"}
@@ -125,8 +221,8 @@ export default function Hero() {
           ))}
         </div>
 
-        {/* Controles del slider */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3">
+        {/* Controles del slider (solo desktop) */}
+        <div className="hidden md:flex absolute bottom-8 left-1/2 transform -translate-x-1/2 space-x-3">
           {slides.map((_, index) => (
             <button
               key={index}
@@ -138,16 +234,16 @@ export default function Hero() {
           ))}
         </div>
 
-        {/* Botones de navegación */}
+        {/* Botones de navegación (solo desktop) */}
         <button
           onClick={prevSlide}
-          className="absolute left-8 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-4 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110"
+          className="hidden md:flex absolute left-8 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-4 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
         <button
           onClick={nextSlide}
-          className="absolute right-8 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-4 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110"
+          className="hidden md:flex absolute right-8 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-4 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110"
         >
           <ChevronRight className="w-6 h-6" />
         </button>

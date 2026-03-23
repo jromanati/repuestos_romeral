@@ -6,10 +6,7 @@ import { Star, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ProductService } from "@/services/product.service"
-import useSWR from 'swr'
-
-const featuredProducts = [
+const featuredProductsStatic = [
   {
     id: 1,
     name: "Kit de Luces LED H4",
@@ -54,7 +51,11 @@ const featuredProducts = [
   },
 ]
 
-export default function FeaturedProducts() {
+type FeaturedProductsProps = {
+  products: any[]
+}
+
+export default function FeaturedProducts({ products }: FeaturedProductsProps) {
   const PLACEHOLDER = "/placeholder.svg?height=300&width=300"
 
   const formatPrice = (price: number) => {
@@ -79,34 +80,9 @@ export default function FeaturedProducts() {
       in_stock: product?.in_stock ?? true,
     }
   }
-  const fetchProducts = async () => {
-    console.log("Authentication status for featured products:")
-    const isAuthenticated = await ProductService.ensureAuthenticated()
-    if (!isAuthenticated) return { products: [] }
 
-    const resp = await ProductService.getProducts()
-    const rawProducts = resp?.data?.products ?? []
-    console.log("Fetched products for featured:", rawProducts)
-
-    return {
-      products: rawProducts.map(mapProduct),
-    }
-  }
-
-  // 👇 Aquí el arreglo: agregar KEY y pasar fetcher como segundo argumento
-  const { data, error, isLoading } = useSWR(
-    "featured-products",      // <- key
-    fetchProducts,            // <- fetcher
-    {
-      revalidateOnFocus: false,
-      shouldRetryOnError: false,
-      onSuccess: (d) => console.log("SWR onSuccess featured:", d),
-      onError: (e) => console.error("SWR onError featured:", e),
-    }
-  )
-
-  const products = data?.products ?? []
-  const featuredProducts = products.slice(0, 3)
+  const mapped = (products && products.length ? products : featuredProductsStatic).map(mapProduct)
+  const featuredProducts = mapped.slice(0, 3)
 
   return (
     <section className="py-16">

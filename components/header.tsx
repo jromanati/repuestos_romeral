@@ -53,20 +53,22 @@ export default function Header() {
       <div className="container mx-auto px-4">
         {/* Main header */}
         <div
-          className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? "py-3" : "py-4"}`}
+          className={`flex items-center justify-between gap-3 transition-all duration-300 ${
+            isScrolled ? "py-3" : "py-4"
+          }`}
         >
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex items-center flex-shrink-0">
             <Image
               src="/images/logo_romeral_completo.png"
               alt="Repuestos Romeral"
               width={180}
               height={60}
-              className="h-16 w-auto"
+              className="h-10 w-auto lg:h-16"
             />
           </Link>
 
-          {/* Search bar */}
-          <div className="hidden lg:flex flex-1 max-w-lg mx-8">
+          {/* Search bar desktop */}
+          <div className="hidden lg:flex flex-1 max-w-lg mx-4">
             <div className="relative w-full">
               <form onSubmit={handleSearch} className="relative w-full">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -77,6 +79,23 @@ export default function Header() {
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar productos, marcas, modelos..."
                   className="pl-12 pr-4 h-12 border-2 border-gray-200 focus:border-red-500 rounded-full"
+                />
+              </form>
+            </div>
+          </div>
+
+          {/* Search bar mobile: centrada entre logo y carrito */}
+          <div className="flex-1 mx-4 lg:hidden">
+            <div className="relative w-full">
+              <form onSubmit={handleSearch} className="relative w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  id="search-mobile"
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar productos..."
+                  className="pl-10 pr-3 h-10 border-2 border-gray-200 focus:border-red-500 rounded-full text-sm"
                 />
               </form>
             </div>
@@ -138,14 +157,6 @@ export default function Header() {
         {isMenuOpen && (
           <div className="lg:hidden py-4 border-t border-gray-100 bg-white">
             <div className="flex flex-col space-y-2">
-              <div className="relative mb-4">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  type="search"
-                  placeholder="Buscar productos..."
-                  className="pl-12 pr-4 h-12 border-2 border-gray-200 focus:border-red-500 rounded-full"
-                />
-              </div>
               {menuItems.map((item) => (
                 <Link key={item.href} href={item.href}>
                   <Button

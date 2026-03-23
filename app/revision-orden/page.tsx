@@ -25,6 +25,7 @@ import {
 import Image from "next/image"
 import Link from "next/link"
 import { usePayment } from "@/hooks/use-payment"
+import jsPDF from "jspdf"
 
 // Interfaces
 interface CartItem {
@@ -58,15 +59,23 @@ interface OrderSummary {
   shipping_address: CustomerData
 }
 
+type PaymentState = "processing" | "approved" | "shipped" | "delivered" | "pending" | "cancelled"
+
+interface OrderPayment {
+  id: string
+  status: PaymentState
+  transaction_id: string
+}
+
 interface OrderData extends OrderSummary {
   order_number: string
   created_at: string
-  status: "processing" | "confirmed" | "shipped" | "delivered" | "approved"
+  status: "processing" | "confirmed" | "shipped" | "delivered" | "approved" | "pending" | "cancelled"
   tracking_number?: string
   estimatedDelivery?: string
   paymentMethod: string
-  transaction_id: string
-  payments?: { status: "processing" | "approved" | "shipped" | "delivered" }
+  transaction_id?: string
+  payments?: OrderPayment
   all_reviews?: unknown
 }
 
@@ -89,17 +98,23 @@ export default function RevisionOrdenPage() {
 function RevisionOrdenContent() {
   const [orderData, setOrderData] = useState<OrderData | null>(null)
   const [error, setError] = useState<boolean>(false)
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false)
 
   const searchParams = useSearchParams()
   const orderId = useMemo(() => searchParams.get("orderId"), [searchParams])
 
-  const { getOrder } = usePayment()
+  const { getOrder, checkPaymentStatus } = usePayment()
 
   // 1) mantener una referencia estable a getOrder
   const getOrderRef = useRef(getOrder)
   useEffect(() => {
     getOrderRef.current = getOrder
   }, [getOrder])
+
+  const checkPaymentStatusRef = useRef(checkPaymentStatus)
+  useEffect(() => {
+    checkPaymentStatusRef.current = checkPaymentStatus
+  }, [checkPaymentStatus])
 
   // 2) evitar llamadas repetidas para el mismo orderId
   const fetchedForIdRef = useRef<string | null>(null)
@@ -138,6 +153,45 @@ function RevisionOrdenContent() {
     }
   }, [orderId]) // <-- ojo: SOLO depende de orderId
 
+  // 3) si la orden está pendiente por pago, consultar estado del pago usando el id de payments
+  useEffect(() => {
+    if (!orderData) return
+    if (orderData.status !== "pending") return
+    if (!orderData.payments?.id) return
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        setIsCheckingPayment(true)
+        const paymentStatus = await checkPaymentStatusRef.current(orderData.payments!.id)
+        if (cancelled || !paymentStatus || !paymentStatus.status) return
+
+        setOrderData(prev => {
+          if (!prev) return prev
+          const nextStatus = paymentStatus.status as PaymentState
+          // actualiza el estado de la orden solo si cambió
+          const updatedStatus = prev.status === nextStatus ? prev.status : nextStatus
+          return {
+            ...prev,
+            status: updatedStatus,
+            payments: prev.payments
+              ? {
+                  ...prev.payments,
+                  status: paymentStatus.status as PaymentState,
+                }
+              : prev.payments,
+          }
+        })
+      } finally {
+        if (!cancelled) setIsCheckingPayment(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [orderData?.status, orderData?.payments?.id])
+
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", minimumFractionDigits: 0 }).format(price)
 
@@ -151,10 +205,397 @@ function RevisionOrdenContent() {
         return { label: "Enviado", color: "bg-green-500", icon: Truck, description: "Tu pedido está en camino" }
       case "delivered":
         return { label: "Entregado", color: "bg-green-600", icon: Package, description: "Tu pedido ha sido entregado" }
+      case "pending":
+        return { label: "Pendiente", color: "bg-orange-500", icon: Clock, description: "Tu pedido está pendiente de pago" }
       case "cancelled":
         return { label: "Cancelado", color: "bg-red-600", icon: AlertCircle, description: "No se pudo procesar el pago y la orden fue cancelada" }
       default:
         return { label: "Desconocido", color: "bg-gray-500", icon: Clock, description: "Estado desconocido" }
+    }
+  }
+
+  const getPaymentStatusInfo = (status: string) => {
+    switch (status) {
+      case "processing":
+        return { label: "Procesando", color: "bg-yellow-500", icon: Clock }
+      case "approved":
+        return { label: "Pago Confirmado", color: "bg-blue-500", icon: CheckCircle }
+      case "shipped":
+        return { label: "Enviado", color: "bg-green-500", icon: Truck }
+      case "delivered":
+        return { label: "Entregado", color: "bg-green-600", icon: Package }
+      case "pending":
+        return { label: "Pendiente", color: "bg-orange-500", icon: Clock }
+      case "cancelled":
+        return { label: "Pago Cancelado", color: "bg-red-600", icon: AlertCircle }
+      default:
+        return { label: "Desconocido", color: "bg-gray-500", icon: Clock }
+    }
+  }
+
+  const paymentStatusInfo = getPaymentStatusInfo(orderData?.payments?.status ?? "processing")
+  const PaymentStatusIcon = paymentStatusInfo.icon
+
+  const handleDownloadPDF = () => {
+    if (!orderData) return
+
+    const doc = new jsPDF({ unit: "mm", format: "a4" })
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+
+    const margin = 14
+    const contentWidth = pageWidth - margin * 2
+    let cursorY = margin
+
+    const colors = {
+      brand: [185, 28, 28] as [number, number, number],      // rojo elegante
+      brandSoft: [248, 240, 240] as [number, number, number],
+      text: [30, 30, 30] as [number, number, number],
+      muted: [110, 110, 110] as [number, number, number],
+      line: [222, 226, 230] as [number, number, number],
+      soft: [248, 249, 250] as [number, number, number],
+      soft2: [240, 240, 240] as [number, number, number],
+      successBg: [232, 245, 233] as [number, number, number],
+      successText: [46, 125, 50] as [number, number, number],
+      warningBg: [255, 248, 225] as [number, number, number],
+      warningText: [180, 120, 0] as [number, number, number],
+    }
+
+    const setText = (rgb: [number, number, number]) => {
+      doc.setTextColor(rgb[0], rgb[1], rgb[2])
+    }
+
+    const setFill = (rgb: [number, number, number]) => {
+      doc.setFillColor(rgb[0], rgb[1], rgb[2])
+    }
+
+    const setDraw = (rgb: [number, number, number]) => {
+      doc.setDrawColor(rgb[0], rgb[1], rgb[2])
+    }
+
+    const money = (value: number | string) => formatPrice(Number(value || 0))
+
+    const transactionId =
+      (orderData.payments as any)?.provider_response?.id ||
+      orderData.payments?.transaction_id ||
+      "-"
+
+    const drawFooter = () => {
+      const footerY = pageHeight - 9
+      setDraw(colors.line)
+      doc.setLineWidth(0.2)
+      doc.line(margin, footerY - 4, pageWidth - margin, footerY - 4)
+
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(8)
+      setText(colors.muted)
+      doc.text(
+        "Repuestos Romeral - www.repuestosromeral.cl - soporte@repuestosromeral.cl",
+        pageWidth / 2,
+        footerY,
+        { align: "center" }
+      )
+    }
+
+    const drawStatusBadge = (
+      label: string,
+      x: number,
+      y: number,
+      type: "success" | "warning" = "success"
+    ) => {
+      const paddingX = 2.5
+      const height = 6.2
+      const textWidth = doc.getTextWidth(label)
+      const badgeWidth = textWidth + paddingX * 2
+
+      const bg = type === "success" ? colors.successBg : colors.warningBg
+      const fg = type === "success" ? colors.successText : colors.warningText
+
+      setFill(bg)
+      setDraw(bg)
+      doc.roundedRect(x, y, badgeWidth, height, 1.5, 1.5, "FD")
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(8.5)
+      setText(fg)
+      doc.text(label, x + paddingX, y + 4.2)
+    }
+
+    const ensureSpace = (needed: number) => {
+      if (cursorY + needed > pageHeight - 20) {
+        drawFooter()
+        doc.addPage()
+        cursorY = margin
+      }
+    }
+
+    const drawContent = () => {
+      setText(colors.text)
+
+      // Franja superior de marca
+      setFill(colors.brand)
+      doc.rect(0, 0, pageWidth, 8, "F")
+
+      cursorY = 14
+
+      // Header principal
+      const headerTop = cursorY
+      const logoX = margin
+      const logoY = headerTop + 1
+      const logoW = 28
+      const logoH = 18
+
+      // Línea vertical decorativa
+      setFill(colors.brand)
+      doc.roundedRect(margin + 34, headerTop, 1.2, 22, 0.6, 0.6, "F")
+
+      // Empresa
+      const companyX = margin + 40
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(16)
+      setText(colors.text)
+      doc.text("Repuestos Romeral", companyX, headerTop + 6)
+
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(9.5)
+      setText(colors.muted)
+      doc.text("RUT: 76.123.456-7", companyX, headerTop + 12)
+      doc.text("www.repuestosromeral.cl", companyX, headerTop + 17)
+
+      // Bloque orden
+      const orderBoxW = 62
+      const orderBoxH = 24
+      const orderBoxX = pageWidth - margin - orderBoxW
+      const orderBoxY = headerTop - 1
+
+      setFill(colors.soft)
+      setDraw(colors.line)
+      doc.roundedRect(orderBoxX, orderBoxY, orderBoxW, orderBoxH, 2, 2, "FD")
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(11)
+      setText(colors.brand)
+      doc.text("ORDEN DE COMPRA", orderBoxX + 4, orderBoxY + 7)
+
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(9.5)
+      setText(colors.text)
+      doc.text(`N°: ${orderData.order_number}`, orderBoxX + 4, orderBoxY + 13)
+      doc.text(`Fecha: ${orderData.created_at}`, orderBoxX + 4, orderBoxY + 18)
+
+      cursorY = headerTop + 30
+
+      // Título sección cliente
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(11)
+      setText(colors.brand)
+      doc.text("DATOS DEL CLIENTE", margin, cursorY)
+
+      cursorY += 4
+
+      // Card cliente
+      const shipping = orderData.shipping_address
+      const clientBoxY = cursorY
+      const clientBoxH = 23
+
+      setFill(colors.brandSoft)
+      setDraw(colors.line)
+      doc.roundedRect(margin, clientBoxY, contentWidth, clientBoxH, 2, 2, "FD")
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(10)
+      setText(colors.text)
+      doc.text("Nombre", margin + 4, clientBoxY + 7)
+      doc.text("Email", margin + 4, clientBoxY + 13)
+      doc.text("Teléfono", margin + 4, clientBoxY + 19)
+
+      doc.setFont("helvetica", "normal")
+      setText(colors.text)
+      doc.text(String(shipping.first_name || "-"), margin + 26, clientBoxY + 7)
+      doc.text(String(shipping.email || "-"), margin + 26, clientBoxY + 13)
+      doc.text(String(shipping.phone || "-"), margin + 26, clientBoxY + 19)
+
+      cursorY += clientBoxH + 8
+
+      // Tabla productos
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(11)
+      setText(colors.brand)
+      doc.text("DETALLE DE PRODUCTOS", margin, cursorY)
+
+      cursorY += 4
+
+      const tableX = margin
+      const tableY = cursorY
+      const tableW = contentWidth
+      const headerH = 8
+
+      const col1W = tableW * 0.62
+      const col2W = tableW * 0.12
+      const col3W = tableW * 0.26
+
+      const col1X = tableX + 4
+      const col2X = tableX + col1W + 4
+      const col3X = tableX + col1W + col2W + 4
+      const col3Right = tableX + tableW - 4
+
+      setFill(colors.soft2)
+      setDraw(colors.line)
+      doc.roundedRect(tableX, tableY, tableW, headerH, 1.5, 1.5, "FD")
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(10)
+      setText(colors.text)
+      doc.text("Producto", col1X, tableY + 5.2)
+      doc.text("Cant.", col2X, tableY + 5.2)
+      doc.text("Total", col3Right, tableY + 5.2, { align: "right" })
+
+      cursorY = tableY + headerH
+
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(9.5)
+
+      orderData.items.forEach((item: any, index: number) => {
+        const name = String(item.product_name || item.name || "-")
+        const totalLine = money((item.price || 0) * (item.quantity || 0))
+
+        const wrappedName = doc.splitTextToSize(name, col1W - 10)
+        const rowHeight = Math.max(8, wrappedName.length * 4.5 + 2)
+
+        ensureSpace(rowHeight + 2)
+
+        const rowY = cursorY
+        if (index % 2 === 0) {
+          setFill([252, 252, 252])
+          doc.rect(tableX, rowY, tableW, rowHeight, "F")
+        }
+
+        setDraw(colors.line)
+        doc.line(tableX, rowY + rowHeight, tableX + tableW, rowY + rowHeight)
+
+        setText(colors.text)
+        doc.text(wrappedName, col1X, rowY + 5)
+
+        doc.text(String(item.quantity || 0), col2X, rowY + 5)
+        doc.text(totalLine, col3Right, rowY + 5, { align: "right" })
+
+        cursorY += rowHeight
+      })
+
+      cursorY += 10
+      ensureSpace(42)
+
+      // Resumen final
+      const summaryY = cursorY
+      const summaryH = 36
+      const leftW = 76
+      const gap = 5
+      const rightW = contentWidth - leftW - gap
+
+      // Caja izquierda: montos
+      setFill(colors.soft)
+      setDraw(colors.line)
+      doc.roundedRect(margin, summaryY, leftW, summaryH, 2, 2, "FD")
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(11)
+      setText(colors.brand)
+      doc.text("RESUMEN DE PAGO", margin + 4, summaryY + 7)
+
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(10)
+      setText(colors.text)
+      doc.text("Subtotal", margin + 4, summaryY + 15)
+      doc.text(money(orderData.subtotal), margin + leftW - 4, summaryY + 15, { align: "right" })
+
+      doc.text("Envío", margin + 4, summaryY + 22)
+      doc.text(money(orderData.shipping_cost), margin + leftW - 4, summaryY + 22, { align: "right" })
+
+      setDraw(colors.line)
+      doc.line(margin + 4, summaryY + 25, margin + leftW - 4, summaryY + 25)
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(13)
+      setText(colors.brand)
+      doc.text("Total", margin + 4, summaryY + 32)
+      doc.text(money(orderData.total), margin + leftW - 4, summaryY + 32, { align: "right" })
+
+      // Caja derecha: estados
+      const rightX = margin + leftW + gap
+      setFill([255, 255, 255])
+      setDraw(colors.line)
+      doc.roundedRect(rightX, summaryY, rightW, summaryH, 2, 2, "FD")
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(11)
+      setText(colors.brand)
+      doc.text("ESTADO DE LA ORDEN", rightX + 4, summaryY + 7)
+
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(9.5)
+      setText(colors.muted)
+      doc.text("Orden", rightX + 4, summaryY + 15)
+      doc.text("Pago", rightX + 4, summaryY + 23)
+      doc.text("Transacción", rightX + 4, summaryY + 31)
+
+      drawStatusBadge(
+        statusInfo.label || "Pendiente",
+        rightX + 25,
+        summaryY + 10.5,
+        (statusInfo.label || "").toLowerCase().includes("confirm")
+          ? "success"
+          : "warning"
+      )
+
+      drawStatusBadge(
+        paymentStatusInfo.label || "Pendiente",
+        rightX + 25,
+        summaryY + 18.5,
+        (paymentStatusInfo.label || "").toLowerCase().includes("confirm")
+          ? "success"
+          : "warning"
+      )
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(9.5)
+      setText(colors.text)
+      doc.text(String(transactionId), rightX + rightW - 4, summaryY + 31, { align: "right" })
+
+      drawFooter()
+      doc.save(`orden-${orderData.order_number}.pdf`)
+    }
+
+    // Cargar logo
+    const img = new window.Image()
+    img.src = "/images/logo_romeral_completo.png"
+
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas")
+        const ctx = canvas.getContext("2d")
+
+        if (!ctx) {
+          drawContent()
+          return
+        }
+
+        canvas.width = img.width
+        canvas.height = img.height
+        ctx.drawImage(img, 0, 0, img.width, img.height)
+
+        const dataUrl = canvas.toDataURL("image/png")
+
+        // logo más contenido para que no invada el resto
+        doc.addImage(dataUrl, "PNG", margin, 15, 28, 18)
+
+        drawContent()
+      } catch {
+        drawContent()
+      }
+    }
+
+    img.onerror = () => {
+      drawContent()
     }
   }
 
@@ -186,26 +627,6 @@ function RevisionOrdenContent() {
 
   const statusInfo = getStatusInfo(orderData.status)
   const StatusIcon = statusInfo.icon
-
-  const getPaymentStatusInfo = (status: string) => {
-    switch (status) {
-      case "processing":
-        return { label: "Procesando", color: "bg-yellow-500", icon: Clock }
-      case "approved":
-        return { label: "Pago Confirmado", color: "bg-blue-500", icon: CheckCircle }
-      case "shipped":
-        return { label: "Enviado", color: "bg-green-500", icon: Truck }
-      case "delivered":
-        return { label: "Entregado", color: "bg-green-600", icon: Package }
-      case "cancelled":
-        return { label: "Pago Cancelado", color: "bg-red-600", icon: AlertCircle }
-      default:
-        return { label: "Desconocido", color: "bg-gray-500", icon: Clock }
-    }
-  }
-
-  const paymentStatusInfo = getPaymentStatusInfo(orderData.payments?.status ?? "processing")
-  const PaymentStatusIcon = paymentStatusInfo.icon
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white">
@@ -430,10 +851,23 @@ function RevisionOrdenContent() {
                         {paymentStatusInfo.label}
                       </span>
                     </div>
+                    {isCheckingPayment && (
+                      <p className="text-xs text-gray-400 mt-2">
+                        Actualizando estado de pago...
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-3 pt-4">
+                  <Button
+                    variant="outline"
+                    className="w-full border-blue-600 text-blue-400 hover:bg-blue-700 hover:text-white bg-transparent"
+                    onClick={handleDownloadPDF}
+                  >
+                    Descargar PDF de la orden
+                  </Button>
+
                   <Link href="/catalog">
                     <Button className="w-full mt-4 bg-red-700 hover:bg-red-600">
                       <ShoppingCart className="w-5 h-5 mr-2" />

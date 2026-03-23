@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { MessageCircle, X } from "lucide-react"
+import Image from "next/image"
 
 export default function WhatsAppButton() {
   const [isOpen, setIsOpen] = useState(false)
@@ -45,8 +46,8 @@ export default function WhatsAppButton() {
           <div className="p-4 border-b bg-green-600 text-white rounded-t-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <MessageCircle className="w-5 h-5" />
-                <span className="font-semibold">AutoPartes Chile</span>
+                <Image src="/images/whatsapp_icon.png" alt="WhatsApp" width={28} height={28} className="w-7 h-7" />
+                <span className="font-semibold">Respuesto Romeral</span>
               </div>
               <button onClick={() => setIsOpen(false)} className="text-white hover:text-gray-200">
                 <X className="w-5 h-5" />
@@ -77,9 +78,13 @@ export default function WhatsAppButton() {
       {/* WhatsApp button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg z-50 transition-all duration-300 hover:scale-110"
+        className="fixed bottom-4 right-4 bg-green-500 hover:bg-green-600 text-white p-3 rounded-full shadow-lg z-50 transition-all duration-300 hover:scale-110"
       >
-        {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
+        {isOpen ? (
+          <X className="w-6 h-6" />
+        ) : (
+          <Image src="/images/whatsapp_icon.png" alt="WhatsApp" width={28} height={28} className="w-7 h-7" />
+        )}
       </button>
     </>
   )
