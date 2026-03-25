@@ -82,7 +82,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
   }
 
   const mapped = (products && products.length ? products : featuredProductsStatic).map(mapProduct)
-  const featuredProducts = mapped.slice(0, 3)
+  const featuredProducts = mapped.slice(0, 4)
 
   return (
     <section className="py-16">
@@ -94,7 +94,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {featuredProducts.map((product) => (
             <Card key={product.id} className="group hover:shadow-lg transition-all duration-300">
               <CardContent className="p-0">

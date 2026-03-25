@@ -6,6 +6,7 @@ import Link from "next/link"
 import { ChevronLeft, ChevronRight, MessageCircle, Star, Zap, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Product } from "@/types/products"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 const staticSlides = [
   {
@@ -43,6 +44,11 @@ const staticSlides = [
   },
 ]
 
+type Slide = (typeof staticSlides)[number] & {
+  isOffer?: boolean
+  discountPercentage?: number
+}
+
 type HeroProps = {
   products: Product[]
 }
@@ -58,6 +64,7 @@ const firstImageUrl = (images?: Product["images"]): string | undefined => {
 export default function Hero({ products }: HeroProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
+  const isMobile = useIsMobile()
 
   const truncate = (text: string | undefined, max: number) => {
     if (!text) return ""
@@ -72,14 +79,40 @@ export default function Hero({ products }: HeroProps) {
     return shortened.slice(0, lastSpaceIndex).trimEnd() + "..."
   }
 
-  const slides = useMemo(() => {
+  const slides: Slide[] = useMemo(() => {
     const hasProducts = Array.isArray(products) && products.length > 0
 
     const productSlides = (products || [])
-      .filter(p => p.is_new)
+      .filter(p => {
+        const originalRaw = (p as any).original_price
+        const priceRaw = (p as any).price
+
+        const original =
+          typeof originalRaw === "string" ? parseFloat(originalRaw) : (originalRaw as number | undefined)
+        const price = typeof priceRaw === "string" ? parseFloat(priceRaw) : (priceRaw as number | undefined)
+
+        if (typeof original !== "number" || typeof price !== "number") return false
+        if (Number.isNaN(original) || Number.isNaN(price)) return false
+
+        return price < original
+      })
       .map(p => {
         const image = p.main_image || firstImageUrl(p.images)
         if (!image) return null
+
+        const originalRaw = (p as any).original_price
+        const priceRaw = (p as any).price
+        const original =
+          typeof originalRaw === "string" ? parseFloat(originalRaw) : (originalRaw as number | undefined)
+        const price = typeof priceRaw === "string" ? parseFloat(priceRaw) : (priceRaw as number | undefined)
+
+        let discountPercentage: number | undefined
+        if (typeof original === "number" && typeof price === "number" && original > 0) {
+          const raw = ((original - price) / original) * 100
+          if (!Number.isNaN(raw) && raw > 0) {
+            discountPercentage = Math.round(raw)
+          }
+        }
 
         return {
           id: p.id,
@@ -90,20 +123,22 @@ export default function Hero({ products }: HeroProps) {
           cta: "Ver producto",
           link: `/product/${p.id}`,
           accent: "from-red-600 to-red-800",
+          isOffer: true,
+          discountPercentage,
         }
       })
-      .filter(Boolean) as typeof staticSlides
+      .filter(Boolean) as Slide[]
 
     const valid = productSlides.slice(0, 5)
 
-    // Si aún no hay productos cargados o el filtro no dejó ningún producto nuevo con imagen,
+    // Si aún no hay productos cargados o el filtro no dejó ningún producto en oferta con imagen,
     // no mostramos slides (evitamos usar solo slides estáticos)
     if (!hasProducts || valid.length === 0) return []
 
     if (valid.length >= 5) return valid
 
     const needed = 5 - valid.length
-    const fallback = staticSlides.slice(0, needed).map((s, idx) => ({
+    const fallback: Slide[] = staticSlides.slice(0, needed).map((s, idx) => ({
       ...s,
       id: 1000 + s.id + idx,
     }))
@@ -200,33 +235,59 @@ export default function Hero({ products }: HeroProps) {
                     priority={index === 0}
                   />
                   <div className={`absolute inset-0 bg-gradient-to-t from-black/70 via-black/60 to-transparent`} />
+                  {slide.isOffer && (
+                    <div className="absolute top-4 left-4 bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-lg">
+                      {slide.discountPercentage ? `Oferta - ${slide.discountPercentage}%` : "Oferta especial"}
+                    </div>
+                  )}
                 </div>
               )}
 
               <div className="container mx-auto px-4 h-full flex items-start lg:items-center pt-16 lg:pt-0">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start lg:items-center w-full">
                   {/* Contenido de texto */}
-                  <div className="text-white space-y-6 z-10">
-                    <div className="space-y-2">
+                  <div
+                    className={`text-white space-y-6 z-10 ${
+                      slide.isOffer ? "flex flex-col justify-center h-full" : ""
+                    }`}
+                  >
+                    <div className={`space-y-2 `}>
                       <div
                         className={`inline-block px-4 py-2 rounded-full bg-gradient-to-r ${slide.accent} text-sm font-medium`}
                       >
                         {slide.subtitle}
                       </div>
                       <h1 className="text-3xl md:text-6xl font-bold leading-tight">{slide.title}</h1>
-                      {/* Descripción truncada en mobile y desktop */}
-                      <p className="text-base md:text-xl text-gray-300 leading-relaxed max-w-lg">
-                        {truncate(slide.description, 290)}
-                      </p>
+                      {/* Descripción: en mobile se oculta solo para slides de producto (isOffer) */}
+                      {!(isMobile && slide.isOffer) && (
+                        <p className="text-base md:text-xl text-gray-300 leading-relaxed max-w-lg">
+                          {slide.description}
+                        </p>
+                      )}
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    <div
+                      className={`flex flex-col sm:flex-row gap-4 ${
+                        slide.isOffer ? "items-start" : ""
+                      }
+                      ${isMobile && slide.isOffer ? "py-5" : ""}
+                      `}
+                    >
                       <Link href={slide.link}>
                         <Button
                           size="lg"
                           className={`bg-gradient-to-r ${slide.accent} hover:shadow-lg transform hover:scale-105 transition-all duration-200 px-8 py-4 text-lg`}
                         >
                           {slide.cta || "Más Información"}
+                        </Button>
+                      </Link>
+                      <Link href="/catalog">
+                        <Button
+                          size="lg"
+                          variant="outline"
+                          className="bg-transparent border-2 border-white/70 text-white hover:bg-white hover:text-gray-900 px-8 py-4 text-lg"
+                        >
+                          Ver todos los productos
                         </Button>
                       </Link>
                     </div>
@@ -243,6 +304,11 @@ export default function Hero({ products }: HeroProps) {
                         priority={index === 0}
                       />
                       <div className={`absolute inset-0 bg-gradient-to-t ${slide.accent} opacity-20`} />
+                      {slide.isOffer && (
+                        <div className="absolute top-6 left-6 bg-red-600 text-white text-sm font-semibold px-4 py-1.5 rounded-full shadow-lg">
+                          {slide.discountPercentage ? `Oferta - ${slide.discountPercentage}%` : "Oferta especial"}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -281,7 +347,8 @@ export default function Hero({ products }: HeroProps) {
         </button>
       </section>
 
-      {/* Sección de descripción de la empresa con diseño moderno */}
+      {/* Sección de descripción de la empresa con diseño moderno (oculta solo en mobile) */}
+      {!isMobile && (
       <section className="py-20 bg-gradient-to-br from-white via-gray-50 to-red-50 relative overflow-hidden">
         {/* Elementos decorativos */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-red-100 rounded-full -translate-y-48 translate-x-48 opacity-50"></div>
@@ -398,6 +465,7 @@ export default function Hero({ products }: HeroProps) {
           </div>
         </div>
       </section>
+      )}
     </>
   )
 }
