@@ -20,9 +20,9 @@ interface Filters {
 }
 
 interface Category {
-  id: string
+  id: string | number
   name: string
-  parent: string | null
+  parent: string | number | null
   products_count: number
   subcategories?: Category[]
 }
@@ -38,6 +38,7 @@ interface ProductFiltersProps {
   categories: Category[]
   brands: Brand[]
   onFiltersChange: (filters: Filters) => void
+  onCloseFilters?: () => void
 }
 
 // const categories = [
@@ -66,10 +67,15 @@ const sortOptions = [
   { value: "rating", label: "Mejor Valorados" },
 ]
 
-export default function ProductFilters({ filters, categories, brands, onFiltersChange }: ProductFiltersProps) {
+export default function ProductFilters({ filters, categories, brands, onFiltersChange, onCloseFilters }: ProductFiltersProps) {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([])
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([])
+  // Inicializamos desde los filtros externos (por ejemplo, categoría en la URL)
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() =>
+    (filters.selectedCategories ?? []).map((id) => String(id)),
+  )
+  const [selectedBrands, setSelectedBrands] = useState<string[]>(() =>
+    (filters.selectedBrands ?? []).map((id) => String(id)),
+  )
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("es-CL", {
       style: "currency",
@@ -80,6 +86,10 @@ export default function ProductFilters({ filters, categories, brands, onFiltersC
 
   const handleFilterChange = (key: keyof Filters, value: any) => {
     onFiltersChange({ ...filters, [key]: value })
+    // En mobile, si hay callback, cerramos el panel de filtros al aplicar un cambio
+    if (onCloseFilters) {
+      onCloseFilters()
+    }
   }
 
   const clearFilters = () => {
@@ -96,29 +106,42 @@ export default function ProductFilters({ filters, categories, brands, onFiltersC
       in_stock: false,
       sortBy: "name",
     })
+    if (onCloseFilters) {
+      onCloseFilters()
+    }
   }
 
-  const toggleCategory = (categoryId: string) => {
+  const toggleCategory = (categoryId: string | number) => {
+    const id = String(categoryId)
     setSelectedCategories((prev) => {
-      if (prev.includes(categoryId)) {
+      if (prev.includes(id)) {
         // Si se deselecciona una categoría principal, también deseleccionar sus subcategorías
-        const category = categories.find((cat) => cat.id === categoryId)
+        const category = categories.find((cat) => String(cat.id) === id)
         if (category && category.subcategories) {
-          const subcategoryIds = category.subcategories.map((sub) => sub.id)
-          return prev.filter((id) => id !== categoryId && !subcategoryIds.includes(id))
+          const subcategoryIds = category.subcategories.map((sub) => String(sub.id))
+          return prev.filter((currentId) => currentId !== id && !subcategoryIds.includes(currentId))
         }
-        return prev.filter((id) => id !== categoryId)
+        return prev.filter((currentId) => currentId !== id)
       } else {
-        return [...prev, categoryId]
+        const category = categories.find((cat) => String(cat.id) === id)
+        // Si es categoría raíz con subcategorías, incluye también sus hijas
+        if (category && category.subcategories && category.subcategories.length > 0) {
+          const subIds = category.subcategories.map((sub) => String(sub.id))
+          return [...prev, id, ...subIds]
+        }
+        return [...prev, id]
       }
     })
+    if (onCloseFilters) {
+      onCloseFilters()
+    }
   }
 
   useEffect(() => {
-      onFiltersChange({
-        ...filters,
-        selectedCategories: selectedCategories,
-      })
+    onFiltersChange({
+      ...filters,
+      selectedCategories,
+    })
   }, [selectedCategories])
 
   const toggleCategoryExpansion = (categoryId: string) => {
@@ -127,12 +150,12 @@ export default function ProductFilters({ filters, categories, brands, onFiltersC
     )
   }
 
-  const isCategorySelected = (categoryId: string) => {
-    return selectedCategories.includes(categoryId)
+  const isCategorySelected = (categoryId: string | number) => {
+    return selectedCategories.includes(String(categoryId))
   }
 
-  const isSubcategorySelected = (subcategoryId: string) => {
-    return selectedCategories.includes(subcategoryId)
+  const isSubcategorySelected = (subcategoryId: string | number) => {
+    return selectedCategories.includes(String(subcategoryId))
   }
 
   const getSelectedCategoriesCount = () => {
@@ -147,6 +170,9 @@ export default function ProductFilters({ filters, categories, brands, onFiltersC
         return [...prev, brandId]
       }
     })
+    if (onCloseFilters) {
+      onCloseFilters()
+    }
   }
   const isBrandSelected = (brandId: string) => {
     return selectedBrands.includes(brandId)
@@ -160,6 +186,17 @@ export default function ProductFilters({ filters, categories, brands, onFiltersC
 
   return (
     <div className="space-y-6">
+      {/* Botón para cerrar filtros solo en mobile */}
+      {onCloseFilters && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="md:hidden w-full bg-transparent mb-2"
+          onClick={onCloseFilters}
+        >
+          Cerrar filtros
+        </Button>
+      )}
       {/* Ordenar por */}
       <Card>
         <CardHeader>
@@ -192,14 +229,14 @@ export default function ProductFilters({ filters, categories, brands, onFiltersC
               <div key={category.id} className="space-y-1">
                 <div className="flex items-center space-x-2 py-1">
                   {category.subcategories &&
-                    category.subcategories.length < 1 && 
+                    category.subcategories.length < 1 && (
                       <Checkbox
-                        id={category.id}
+                        id={String(category.id)}
                         checked={isCategorySelected(category.id)}
                         onCheckedChange={() => toggleCategory(category.id)}
                         className="border-red-600 data-[state=checked]:bg-red-600"
                       />
-                  }
+                  )}
                   <button
                     onClick={() => toggleCategoryExpansion(category.id)}
                     className="flex items-center space-x-1 flex-1 text-left hover:text-red-400 transition-colors"
@@ -212,7 +249,7 @@ export default function ProductFilters({ filters, categories, brands, onFiltersC
                         <ChevronRight className="w-3 h-3 text-black-500" />
                       ))}
                     <label
-                      htmlFor={`category-value-${category.id}`}
+                      htmlFor={`category-value-${String(category.id)}`}
                       className="text-sm text-black cursor-pointer flex-1 flex justify-between font-medium"
                     >
                       <span>{category.name}</span>
@@ -225,15 +262,15 @@ export default function ProductFilters({ filters, categories, brands, onFiltersC
                 {category.subcategories && expandedCategories.includes(category.id) && (
                   <div className="ml-6 space-y-1 border-l border-black/30 pl-3">
                     {category.subcategories.map((subcategory) => (
-                      <div key={subcategory.id} className="flex items-center space-x-2 py-1">
+                      <div key={String(subcategory.id)} className="flex items-center space-x-2 py-1">
                         <Checkbox
-                          id={subcategory.id}
+                          id={String(subcategory.id)}
                           checked={isSubcategorySelected(subcategory.id)}
                           onCheckedChange={() => toggleCategory(subcategory.id)}
                           className="border-black data-[state=checked]:bg-black"
                         />
                         <label
-                          htmlFor={`subcategory-value-${subcategory.id}`}
+                          htmlFor={`subcategory-value-${String(subcategory.id)}`}
                           className="text-sm text-black-400 cursor-pointer flex-1 flex justify-between hover:text-black-300 transition-colors"
                         >
                           <span>{subcategory.name}</span>

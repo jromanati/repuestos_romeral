@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { useCart } from "@/hooks/use-cart"
 import { useRouter } from "next/navigation"
+import { useCatalog } from "@/hooks/use-catalog"
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -16,6 +17,8 @@ export default function Header() {
   const { items } = useCart()
   const router = useRouter()
   const [search, setSearch] = useState("")
+  const { data: catalogData } = useCatalog()
+  const categories = catalogData?.categories ?? []
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,11 +29,11 @@ export default function Header() {
   const itemCount = items.reduce((total, item) => total + item.quantity, 0)
 
   const menuItems = [
-    { href: "/catalog", label: "Nuestros Productos", icon: null },
+    { href: "/catalog", label: "Nuestros Productos", icon: ShoppingCart },
     { href: "/ubicacion", label: "Ubicación", icon: MapPin },
     { href: "/asesoria-tecnica", label: "Asesoría Técnica", icon: Wrench },
     { href: "/contacto", label: "Contacto", icon: Phone },
-    { href: "/about", label: "Quiénes Somos", icon: null },
+    { href: "/about", label: "Quiénes Somos", icon: User },
   ]
 
   useEffect(() => {
@@ -41,6 +44,8 @@ export default function Header() {
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  const rootCategories = categories.filter((c: any) => !c.parent)
 
   return (
     <header
@@ -85,7 +90,7 @@ export default function Header() {
           </div>
 
           {/* Search bar mobile: centrada entre logo y carrito */}
-          <div className="flex-1 mx-4 lg:hidden">
+          <div className=" lg:hidden">
             <div className="relative w-full">
               <form onSubmit={handleSearch} className="relative w-full">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -94,7 +99,7 @@ export default function Header() {
                   type="search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar productos..."
+                  placeholder="Buscar productos"
                   className="pl-10 pr-3 h-10 border-2 border-gray-200 focus:border-red-500 rounded-full text-sm"
                 />
               </form>
@@ -102,7 +107,7 @@ export default function Header() {
           </div>
 
           {/* Right section */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center  space-x-1">
             {/* <Button variant="ghost" size="sm" className="hidden md:flex hover:bg-red-50 hover:text-red-600">
               <User className="w-4 h-4 mr-2" />
               Mi Cuenta
@@ -126,7 +131,7 @@ export default function Header() {
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden p-3 rounded-full hover:bg-red-50"
+              className="lg:hidden p-2 rounded-full hover:bg-red-50"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -140,6 +145,44 @@ export default function Header() {
             isScrolled ? "py-3" : "py-4"
           }`}
         >
+          {/* Menú de categorías (solo desktop) */}
+          {rootCategories.length > 0 && (
+            <div className="relative group">
+              <Button
+                variant="ghost"
+                className="flex items-center space-x-2 px-6 py-3 rounded-full hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+              >
+                <span className="font-medium">Categorías</span>
+              </Button>
+              <div className="absolute left-0 top-full hidden group-hover:block bg-white shadow-xl rounded-xl border border-gray-100 z-50 min-w-[320px] max-h-[460px] overflow-y-auto">
+                <ul className="py-2 divide-y divide-gray-100">
+                  {rootCategories.map((cat: any) => (
+                    <li key={cat.id} className="px-3 py-2">
+                      <div className="flex items-center justify-between px-1 py-1">
+                          {cat.name}
+                      </div>
+
+                      {Array.isArray(cat.subcategories) && cat.subcategories.length > 0 && (
+                        <ul className="mt-1 space-y-1">
+                          {cat.subcategories.map((sub: any) => (
+                            <li key={sub.id}>
+                              <Link
+                                href={`/catalog?category=${sub.id}`}
+                                className="flex items-center justify-between px-2 py-1 text-xs text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-md"
+                              >
+                                <span>{sub.name}</span>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
           {menuItems.map((item) => (
             <Link key={item.href} href={item.href}>
               <Button

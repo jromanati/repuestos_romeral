@@ -32,7 +32,7 @@ export default function CatalogPage() {
   const [filters, setFilters] = useState<Filters>(() => {
     const categoryFromUrl = searchParams.get("category")
     return {
-      selectedCategories: [],
+      selectedCategories: categoryFromUrl ? [categoryFromUrl] : [],
       selectedBrands: [],
       model: "",
       priceRange: [0, 500000],
@@ -127,7 +127,7 @@ export default function CatalogPage() {
     
     if (filters.selectedCategories && filters.selectedCategories.length > 0) {
       filtered = filtered.filter((product) =>
-        filters.selectedCategories.includes(product.category)
+        filters.selectedCategories.includes(String(product.category))
       )
     }
     if (filters.selectedBrands && filters.selectedBrands.length > 0) {
@@ -203,12 +203,26 @@ export default function CatalogPage() {
           {isLoading ? "Cargando productos..." : `${filteredProducts.length} productos encontrados`}
         </p>
         
-        <div className="flex gap-8">
-          <div className={`${showFilters ? "block" : "hidden"} md:block w-full md:w-64 flex-shrink-0`}>
-            <ProductFilters filters={filters} categories={categories} brands={brands} onFiltersChange={setFilters} />
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* Sidebar de filtros: en mobile ocupa toda la pantalla cuando showFilters es true; en desktop siempre visible */}
+          <div
+            className={
+              showFilters
+                ? "block w-full md:w-64 flex-shrink-0"
+                : "hidden md:block w-full md:w-64 flex-shrink-0"
+            }
+          >
+            <ProductFilters
+              filters={filters}
+              categories={categories}
+              brands={brands}
+              onFiltersChange={setFilters}
+              onCloseFilters={() => setShowFilters(false)}
+            />
           </div>
 
-          <div className="flex-1">
+          {/* Contenido principal: en mobile se oculta cuando showFilters es true; en desktop siempre visible */}
+          <div className={showFilters ? "hidden md:flex-1" : "flex-1"}>
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-2">
                 <div className="hidden sm:flex items-center gap-1 border rounded-lg p-1">
