@@ -85,7 +85,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
   const featuredProducts = mapped.slice(0, 4)
 
   return (
-    <section className="py-16">
+    <section className="py-5">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Productos Destacados</h2>

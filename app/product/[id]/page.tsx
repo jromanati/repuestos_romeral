@@ -87,7 +87,7 @@ export default function ProductPage() {
   const imageUrls = useMemo(() => {
     const primary = (typeof main_image === "string" && main_image.trim()) ? [main_image] : []
     const gallery = Array.isArray(images) ? images.map(i => i?.url).filter(Boolean) : []
-    const all = [...primary, ...gallery]
+    const all = [...gallery]
     const dedup = Array.from(new Set(all))
     return dedup.length ? dedup : [PLACEHOLDER]
   }, [main_image, images])

@@ -238,12 +238,12 @@ export default function ProductFilters({ filters, categories, brands, onFiltersC
                       />
                   )}
                   <button
-                    onClick={() => toggleCategoryExpansion(category.id)}
+                    onClick={() => toggleCategoryExpansion(String(category.id))}
                     className="flex items-center space-x-1 flex-1 text-left hover:text-red-400 transition-colors"
                   >
                     {category.subcategories &&
                       category.subcategories.length > 0 &&
-                      (expandedCategories.includes(category.id) ? (
+                      (expandedCategories.includes(String(category.id)) ? (
                         <ChevronDown className="w-3 h-3 text-black-500" />
                       ) : (
                         <ChevronRight className="w-3 h-3 text-black-500" />
@@ -259,7 +259,7 @@ export default function ProductFilters({ filters, categories, brands, onFiltersC
                 </div>
 
                 {/* Subcategorías */}
-                {category.subcategories && expandedCategories.includes(category.id) && (
+                {category.subcategories && expandedCategories.includes(String(category.id)) && (
                   <div className="ml-6 space-y-1 border-l border-black/30 pl-3">
                     {category.subcategories.map((subcategory) => (
                       <div key={String(subcategory.id)} className="flex items-center space-x-2 py-1">
@@ -287,32 +287,34 @@ export default function ProductFilters({ filters, categories, brands, onFiltersC
       </Card>
 
       {/* Marca  */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Marcas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
-            {brands.map((brand) => (
-              <div key={brand.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={brand.id}
-                  checked={isBrandSelected(brand.id)}
-                  onCheckedChange={() => toggleBrand(brand.id)}
-                  className="border-black data-[state=checked]:bg-black"
-                />
-                <label
-                  htmlFor={`brand-value-${brand.id}`}
-                  className="text-sm text-black cursor-pointer flex-1 flex justify-between hover:text-black transition-colors"
-                >
-                  <span>{brand.name}</span>
-                  <span className="text-black">({brand.products_count})</span>
-                </label>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {Array.isArray(brands) && brands.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Marcas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {brands.map((brand) => (
+                <div key={brand.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={brand.id}
+                    checked={isBrandSelected(brand.id)}
+                    onCheckedChange={() => toggleBrand(brand.id)}
+                    className="border-black data-[state=checked]:bg-black"
+                  />
+                  <label
+                    htmlFor={`brand-value-${String(brand.id)}`}
+                    className="text-sm text-black cursor-pointer flex-1 flex justify-between hover:text-black transition-colors"
+                  >
+                    <span>{brand.name}</span>
+                    <span className="text-black">({brand.products_count})</span>
+                  </label>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Modelo del vehículo 
       <Card>

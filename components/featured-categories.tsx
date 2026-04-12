@@ -1,81 +1,84 @@
+"use client"
+
 import Link from "next/link"
 import Image from "next/image"
-import { Card, CardContent } from "@/components/ui/card"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
 
-const categories = [
-  {
-    name: "Luces",
-    description: "LED, Halógenas, Xenón",
-    image: "/placeholder.svg?height=200&width=300",
-    link: "/catalog?category=luces",
-  },
-  {
-    name: "Frenos",
-    description: "Pastillas, Discos, Líquidos",
-    image: "/placeholder.svg?height=200&width=300",
-    link: "/catalog?category=frenos",
-  },
-  {
-    name: "Suspensión",
-    description: "Amortiguadores, Resortes",
-    image: "/placeholder.svg?height=200&width=300",
-    link: "/catalog?category=suspension",
-  },
-  {
-    name: "Audio",
-    description: "Radios, Parlantes, Amplificadores",
-    image: "/placeholder.svg?height=200&width=300",
-    link: "/catalog?category=audio",
-  },
-  {
-    name: "Llantas",
-    description: "Aleación, Acero, Deportivas",
-    image: "/placeholder.svg?height=200&width=300",
-    link: "/catalog?category=llantas",
-  },
-  {
-    name: "Motor",
-    description: "Filtros, Aceites, Bujías",
-    image: "/placeholder.svg?height=200&width=300",
-    link: "/catalog?category=motor",
-  },
-]
+type Category = {
+  id: string | number
+  name: string
+  image_url?: string | null
+  parent?: string | number | null
+}
 
-export default function FeaturedCategories() {
+type FeaturedCategoriesProps = {
+  categories: Category[]
+}
+
+export default function FeaturedCategories({ categories }: FeaturedCategoriesProps) {
+  const categoriesWithImages = Array.from(
+    new Map(
+      (Array.isArray(categories) ? categories : [])
+        .filter((c) => Boolean(c?.image_url) && (c?.parent === null || c?.parent === undefined))
+        .map((c) => [String(c.id), c])
+    ).values()
+  )
+
+  if (categoriesWithImages.length === 0) return null
+
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-5 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Categorías Destacadas</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Encuentra todo lo que necesitas para tu vehículo en nuestras categorías principales
-          </p>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Nuestras Categorías</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.map((category) => (
-            <Link key={category.name} href={category.link}>
-              <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
-                <CardContent className="p-0">
-                  <div className="relative h-48 overflow-hidden">
-                    <Image
-                      src={category.image || "/placeholder.svg"}
-                      alt={category.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-30 transition-all" />
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+        <div className="relative">
+          <Carousel
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="py-2">
+              {categoriesWithImages.map((category) => (
+                <CarouselItem
+                  key={String(category.id)}
+                  className="basis-1/3 sm:basis-1/4 md:basis-1/6 lg:basis-1/7"
+                >
+                  <Link
+                    href={`/catalog?category=${encodeURIComponent(String(category.id))}`}
+                    className="flex flex-col items-center text-center gap-3 group"
+                  >
+                    <div className="relative h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 rounded-full overflow-hidden border bg-white shadow-sm group-hover:shadow-md transition-shadow">
+                      <Image
+                        src={category.image_url as string}
+                        alt={category.name}
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="text-sm sm:text-base font-medium text-gray-900 leading-tight line-clamp-2 max-w-[10rem]">
                       {category.name}
-                    </h3>
-                    <p className="text-gray-600">{category.description}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                    </div>
+                  </Link>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+
+            <div className="hidden md:block">
+              <CarouselPrevious className="bg-white/90 hover:bg-white" />
+              <CarouselNext className="bg-white/90 hover:bg-white" />
+            </div>
+          </Carousel>
         </div>
       </div>
     </section>

@@ -94,6 +94,25 @@ export default function CatalogPage() {
     let filtered = [...products]
     let filteredCategories = []
     filteredCategories = [...categories]
+
+    const selectedCategoriesEffective = (() => {
+      const selected = (filters.selectedCategories ?? []).map(String)
+      if (selected.length === 0) return [] as string[]
+
+      const set = new Set<string>()
+      for (const id of selected) {
+        set.add(id)
+
+        const category = categories.find((c: any) => String(c?.id) === id)
+        if (category?.parent === null && Array.isArray(category?.subcategories) && category.subcategories.length > 0) {
+          for (const sub of category.subcategories) {
+            if (sub?.id !== undefined && sub?.id !== null) set.add(String(sub.id))
+          }
+        }
+      }
+
+      return Array.from(set)
+    })()
     const search = localStorage.getItem("search_product")
     if (search) {
       const searchLower = search.toLowerCase()
@@ -125,9 +144,9 @@ export default function CatalogPage() {
     }
 
     
-    if (filters.selectedCategories && filters.selectedCategories.length > 0) {
+    if (selectedCategoriesEffective.length > 0) {
       filtered = filtered.filter((product) =>
-        filters.selectedCategories.includes(String(product.category))
+        selectedCategoriesEffective.includes(String(product.category))
       )
     }
     if (filters.selectedBrands && filters.selectedBrands.length > 0) {
@@ -171,7 +190,7 @@ export default function CatalogPage() {
     }
 
     return filtered
-  }, [products, filters, searchQuery])
+  }, [products, categories, filters, searchQuery])
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage

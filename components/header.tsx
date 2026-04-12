@@ -159,7 +159,12 @@ export default function Header() {
                   {rootCategories.map((cat: any) => (
                     <li key={cat.id} className="px-3 py-2">
                       <div className="flex items-center justify-between px-1 py-1">
+                        <Link
+                          href={`/catalog?category=${encodeURIComponent(String(cat.id))}`}
+                          className="text-sm font-medium text-gray-900 hover:text-red-600"
+                        >
                           {cat.name}
+                        </Link>
                       </div>
 
                       {Array.isArray(cat.subcategories) && cat.subcategories.length > 0 && (
@@ -167,7 +172,7 @@ export default function Header() {
                           {cat.subcategories.map((sub: any) => (
                             <li key={sub.id}>
                               <Link
-                                href={`/catalog?category=${sub.id}`}
+                                href={`/catalog?category=${encodeURIComponent(String(sub.id))}`}
                                 className="flex items-center justify-between px-2 py-1 text-xs text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-md"
                               >
                                 <span>{sub.name}</span>

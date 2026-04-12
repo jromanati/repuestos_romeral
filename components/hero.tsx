@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, MessageCircle, Star, Zap, Shield } from "lucide-react"
+import { ChevronLeft, ChevronRight, MessageCircle, Star, Shield, Truck, CreditCard, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Product } from "@/types/products"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -47,6 +47,7 @@ const staticSlides = [
 type Slide = (typeof staticSlides)[number] & {
   isOffer?: boolean
   discountPercentage?: number
+  accent?: string
 }
 
 type HeroProps = {
@@ -122,7 +123,7 @@ export default function Hero({ products }: HeroProps) {
           image,
           cta: "Ver producto",
           link: `/product/${p.id}`,
-          accent: "from-red-600 to-red-800",
+          // accent: "from-red-600 to-red-800",
           isOffer: true,
           discountPercentage,
         }
@@ -201,7 +202,7 @@ export default function Hero({ products }: HeroProps) {
   return (
     <>
       {/* Hero principal con diseño innovador */}
-      <section className="relative min-h-[70vh] lg:min-h-screen overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+      <section className="relative min-h-[45vh] sm:min-h-[55vh] md:min-h-[70vh] lg:min-h-screen overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black">
         {/* Formas geométricas de fondo */}
         <div className="absolute inset-0">
           <div className="absolute top-20 left-10 w-72 h-72 bg-red-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
@@ -211,7 +212,7 @@ export default function Hero({ products }: HeroProps) {
 
         {/* Slider de productos */}
         <div
-          className="relative h-[70vh] lg:h-screen"
+          className="relative h-[45vh] sm:h-[55vh] md:h-[70vh] lg:h-screen"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
@@ -224,17 +225,16 @@ export default function Hero({ products }: HeroProps) {
                   : "opacity-0 scale-105 pointer-events-none"
               }`}
             >
-              {/* Fondo de imagen para mobile */}
+              {/* Fondo de imagen (mobile + desktop) */}
               {slide.image && (
-                <div className="absolute inset-0 lg:hidden">
+                <div className="absolute inset-0">
                   <Image
                     src={slide.image}
                     alt={slide.title}
                     fill
-                    className="object-cover opacity-40"
+                    className="object-cover"
                     priority={index === 0}
                   />
-                  <div className={`absolute inset-0 bg-gradient-to-t from-black/70 via-black/60 to-transparent`} />
                   {slide.isOffer && (
                     <div className="absolute top-4 left-4 bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-lg">
                       {slide.discountPercentage ? `Oferta - ${slide.discountPercentage}%` : "Oferta especial"}
@@ -244,7 +244,7 @@ export default function Hero({ products }: HeroProps) {
               )}
 
               <div className="container mx-auto px-4 h-full flex items-start lg:items-center pt-16 lg:pt-0">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start lg:items-center w-full">
+                <div className="grid grid-cols-1 gap-8 lg:gap-12 items-start lg:items-center w-full">
                   {/* Contenido de texto */}
                   <div
                     className={`text-white space-y-6 z-10 ${
@@ -253,17 +253,22 @@ export default function Hero({ products }: HeroProps) {
                   >
                     <div className={`space-y-2 `}>
                       <div
-                        className={`inline-block px-4 py-2 rounded-full bg-gradient-to-r ${slide.accent} text-sm font-medium`}
+                        className="inline-block px-4 py-2 rounded-full bg-black/50 text-sm font-medium"
                       >
                         {slide.subtitle}
                       </div>
-                      <h1 className="text-3xl md:text-6xl font-bold leading-tight">{slide.title}</h1>
+                      <h1
+                        className="text-3xl md:text-6xl font-bold leading-tight drop-shadow-2xl "
+                        style={{ textShadow: "0 4px 18px rgba(0,0,0,0.65)" }}
+                      >
+                        {slide.title}
+                      </h1>
                       {/* Descripción: en mobile se oculta solo para slides de producto (isOffer) */}
-                      {!(isMobile && slide.isOffer) && (
+                      {/* {!(isMobile && slide.isOffer) && (
                         <p className="text-base md:text-xl text-gray-300 leading-relaxed max-w-lg">
                           {slide.description}
                         </p>
-                      )}
+                      )} */}
                     </div>
 
                     <div
@@ -276,7 +281,7 @@ export default function Hero({ products }: HeroProps) {
                       <Link href={slide.link}>
                         <Button
                           size="lg"
-                          className={`bg-gradient-to-r ${slide.accent} hover:shadow-lg transform hover:scale-105 transition-all duration-200 px-8 py-4 text-lg`}
+                          className="bg-red-600 hover:bg-red-700 hover:shadow-lg transform hover:scale-105 transition-all duration-200 px-8 py-4 text-lg"
                         >
                           {slide.cta || "Más Información"}
                         </Button>
@@ -285,30 +290,11 @@ export default function Hero({ products }: HeroProps) {
                         <Button
                           size="lg"
                           variant="outline"
-                          className="bg-transparent border-2 border-white/70 text-white hover:bg-white hover:text-gray-900 px-8 py-4 text-lg"
+                          className="bg-red-600 hover:bg-red-700 hover:shadow-lg transform hover:scale-105 transition-all duration-200 px-8 py-4 text-lg"
                         >
                           Ver todos los productos
                         </Button>
                       </Link>
-                    </div>
-                  </div>
-
-                  {/* Imagen del producto (solo visible en pantallas grandes) */}
-                  <div className="relative hidden lg:block">
-                    <div className="relative w-full h-full lg:h-[800px] rounded-2xl overflow-hidden shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-800">
-                      <Image
-                        src={slide.image || "/placeholder.svg"}
-                        alt={slide.title}
-                        fill
-                        className="object-cover"
-                        priority={index === 0}
-                      />
-                      <div className={`absolute inset-0 bg-gradient-to-t ${slide.accent} opacity-20`} />
-                      {slide.isOffer && (
-                        <div className="absolute top-6 left-6 bg-red-600 text-white text-sm font-semibold px-4 py-1.5 rounded-full shadow-lg">
-                          {slide.discountPercentage ? `Oferta - ${slide.discountPercentage}%` : "Oferta especial"}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -346,6 +332,50 @@ export default function Hero({ products }: HeroProps) {
           <ChevronRight className="w-6 h-6" />
         </button>
       </section>
+
+      {isMobile && (
+        <section className="py-5 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="bg-red-100 p-2 rounded-full">
+                    <Truck className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div className="text-sm font-semibold text-gray-900 leading-tight">Envíos a todo Chile</div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="bg-red-100 p-2 rounded-full">
+                    <CreditCard className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div className="text-sm font-semibold text-gray-900 leading-tight">Pago seguro</div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <Shield className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="text-sm font-semibold text-gray-900 leading-tight">Calidad garantizada</div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="bg-green-100 p-2 rounded-full">
+                    <Store className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="text-sm font-semibold text-gray-900 leading-tight">Retiro en tienda</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Sección de descripción de la empresa con diseño moderno (oculta solo en mobile) */}
       {!isMobile && (
@@ -406,11 +436,20 @@ export default function Hero({ products }: HeroProps) {
                 <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="bg-red-100 p-3 rounded-full">
-                      <Zap className="w-8 h-8 text-red-600" />
+                      <Truck className="w-8 h-8 text-red-600" />
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900">Servicio Rápido</h3>
+                    <h3 className="text-2xl font-bold text-gray-900">Envíos a todo chile</h3>
                   </div>
-                  <p className="text-gray-600">Atención inmediata y soluciones eficientes para tu vehículo.</p>
+                  <p className="text-gray-600">Envíos rápidos y seguros a todo Chile.</p>
+                </div>
+                <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+                  <div className="flex items-center space-x-4 mb-4">
+                    <div className="bg-red-100 p-3 rounded-full">
+                      <CreditCard className="w-8 h-8 text-red-600" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900">Pago seguro</h3>
+                  </div>
+                  <p className="text-gray-600">Métodos de pago seguros y confiables.</p>
                 </div>
 
                 <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
@@ -426,11 +465,11 @@ export default function Hero({ products }: HeroProps) {
                 <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="bg-green-100 p-3 rounded-full">
-                      <MessageCircle className="w-8 h-8 text-green-600" />
+                      <Store className="w-8 h-8 text-green-600" />
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900">Asesoría Experta</h3>
+                    <h3 className="text-2xl font-bold text-gray-900">Retiro en tienda</h3>
                   </div>
-                  <p className="text-gray-600">Consulta técnica especializada para encontrar el repuesto correcto.</p>
+                  <p className="text-gray-600">Retira tu pedido en nuestra sucursal sin costo adicional.</p>
                 </div>
               </div>
             </div>
