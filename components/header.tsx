@@ -114,7 +114,7 @@ export default function Header() {
               Mi Cuenta
             </Button> */}
 
-            <CatalogPdfDownloadButton />
+            <CatalogPdfDownloadButton className="hidden lg:flex" />
 
             <Link href="/cart">
               <Button
@@ -208,6 +208,7 @@ export default function Header() {
         {isMenuOpen && (
           <div className="lg:hidden py-4 border-t border-gray-100 bg-white">
             <div className="flex flex-col space-y-2">
+              <CatalogPdfDownloadButton mode="menu" />
               {menuItems.map((item) => (
                 <Link key={item.href} href={item.href}>
                   <Button

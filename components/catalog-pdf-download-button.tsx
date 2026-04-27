@@ -4,10 +4,23 @@ import { useState } from "react"
 import { Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-export default function CatalogPdfDownloadButton() {
+type CatalogPdfDownloadButtonProps = {
+  className?: string
+  showText?: boolean
+  mode?: "desktop" | "menu"
+  onStart?: () => void
+}
+
+export default function CatalogPdfDownloadButton({
+  className,
+  showText = true,
+  mode = "desktop",
+  onStart,
+}: CatalogPdfDownloadButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   const handleDownload = async () => {
+    onStart?.()
     setIsLoading(true)
     try {
       const token = localStorage.getItem("token")
@@ -40,17 +53,24 @@ export default function CatalogPdfDownloadButton() {
     }
   }
 
+  const buttonVariant = mode === "menu" ? "ghost" : "outline"
+  const buttonSize = mode === "menu" ? "default" : "sm"
+  const baseClassName =
+    mode === "menu"
+      ? "w-full justify-start space-x-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600"
+      : "hover:bg-red-50 hover:text-red-600"
+
   return (
     <Button
-      variant="outline"
-      size="sm"
-      className="hidden lg:flex hover:bg-red-50 hover:text-red-600"
+      variant={buttonVariant as any}
+      size={buttonSize as any}
+      className={["flex", baseClassName, className].filter(Boolean).join(" ")}
       onClick={handleDownload}
       disabled={isLoading}
       aria-label="Descargar catálogo PDF"
     >
-      <Download className="w-4 h-4 mr-2" />
-      {isLoading ? "Descargando..." : "Descargar catálogo"}
+      <Download className="w-4 h-4" />
+      {showText ? <span>{isLoading ? "Descargando..." : "Descargar catálogo"}</span> : null}
     </Button>
   )
 }
