@@ -91,7 +91,7 @@ export default function Footer() {
             <div className="space-y-2 text-gray-300">
               <p>📞 +56 9 6812 9078</p>
               <p>✉️ repuestosromeral.mc@gmail.com</p>
-              <p>📍 Av. Libertad 1116 y 1024, Local 4 – Romeral</p>
+              <p>📍 Av. Libertad 1024, Local 4 – Romeral</p>
               <p>🕒 Lun-Vie: 09:30 a 13:30 / 15:00 a 19:00</p>
               <p>🕒 Sáb: 10:00 a 17:00</p>
             </div>

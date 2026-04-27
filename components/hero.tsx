@@ -252,7 +252,7 @@ export default function Hero({ products }: HeroProps) {
                     }`}
                   >
                     <div className={`space-y-2 `}>
-                      <div
+                      {/* <div
                         className="inline-block px-4 py-2 rounded-full bg-black/50 text-sm font-medium"
                       >
                         {slide.subtitle}
@@ -262,7 +262,7 @@ export default function Hero({ products }: HeroProps) {
                         style={{ textShadow: "0 4px 18px rgba(0,0,0,0.65)" }}
                       >
                         {slide.title}
-                      </h1>
+                      </h1> */}
                       {/* Descripción: en mobile se oculta solo para slides de producto (isOffer) */}
                       {/* {!(isMobile && slide.isOffer) && (
                         <p className="text-base md:text-xl text-gray-300 leading-relaxed max-w-lg">

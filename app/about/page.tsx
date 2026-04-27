@@ -9,7 +9,7 @@ export default function AboutPage() {
   const stores = [
     {
       name: "Repuestos Romeral",
-      address: "Av. Libertad 1116 y 1024, Local 4, Romeral",
+      address: "Av. Libertad 1024, Local 4, Romeral",
       phone: "+56 9 6812 9078",
       hours: "Lun-Vie: 9:00-18:00, Sáb: 9:00-13:00",
       mapUrl: "https://maps.app.goo.gl/4gmbV9XsR5LEmFw99",

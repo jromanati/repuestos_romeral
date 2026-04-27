@@ -144,13 +144,13 @@ export default function ProductGrid({ products, viewMode = "grid" }: ProductGrid
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {products.map((product) => (
         <Card key={product.id} className="group hover:shadow-lg transition-all duration-300">
           <CardContent className="p-0">
             <div className="relative">
-              <div className="relative h-64 overflow-hidden rounded-t-lg">
-                <img src={product.image} alt={product.name} className="object-cover group-hover:scale-105 transition-transform duration-300"/>
+              <div className="relative h-40 sm:h-56 lg:h-64 overflow-hidden rounded-t-lg">
+                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
                 {!product.in_stock && (
                   <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                     <span className="text-white font-semibold">Agotado</span>

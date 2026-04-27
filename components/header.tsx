@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { useCart } from "@/hooks/use-cart"
 import { useRouter } from "next/navigation"
 import { useCatalog } from "@/hooks/use-catalog"
+import CatalogPdfDownloadButton from "@/components/catalog-pdf-download-button"
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -112,6 +113,8 @@ export default function Header() {
               <User className="w-4 h-4 mr-2" />
               Mi Cuenta
             </Button> */}
+
+            <CatalogPdfDownloadButton />
 
             <Link href="/cart">
               <Button

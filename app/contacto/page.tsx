@@ -79,8 +79,8 @@ export default function ContactoPage() {
       icon: MapPin,
       title: "Visítanos",
       description: "Atención presencial",
-      value: "Av. Libertad 1116, Romeral",
-      action: () => window.open("https://maps.google.com/?q=Av.+Libertad+1116+Romeral+Chile", "_blank"),
+      value: "Av. Libertad 1024, Romeral",
+      action: () => window.open("https://maps.google.com/?q=Av.+Libertad+1024+Romeral+Chile", "_blank"),
       color: "bg-red-100 text-red-600",
     },
   ]

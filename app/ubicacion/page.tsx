@@ -6,11 +6,11 @@ import { Card, CardContent } from "@/components/ui/card"
 
 export default function UbicacionPage() {
   const openGoogleMaps = () => {
-    window.open("https://maps.google.com/?q=Av.+Libertad+1116+Romeral+Chile", "_blank")
+    window.open("https://maps.google.com/?q=Av.+Libertad+1024+Romeral+Chile", "_blank")
   }
 
   const openWaze = () => {
-    window.open("https://waze.com/ul?q=Av.+Libertad+1116+Romeral+Chile", "_blank")
+    window.open("https://waze.com/ul?q=Av.+Libertad+1024+Romeral+Chile", "_blank")
   }
 
   return (
@@ -58,7 +58,7 @@ export default function UbicacionPage() {
                     <div>
                       <h3 className="text-xl font-semibold text-gray-900 mb-2">Dirección</h3>
                       <p className="text-gray-700 text-lg">
-                        Avenida Libertad 1116 y 1024, Local 4<br />
+                        Avenida Libertad 1024, Local 4<br />
                         Romeral, Región del Maule, Chile
                       </p>
                     </div>
@@ -134,7 +134,7 @@ export default function UbicacionPage() {
                 <CardContent className="p-0">
                   <div className="relative h-96 bg-gray-200">
                     <iframe
-                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3273.123456789!2d-71.123456!3d-34.987654!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sAv.%20Libertad%201116%2C%20Romeral!5e0!3m2!1ses!2scl!4v1234567890"
+                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3273.123456789!2d-71.123456!3d-34.987654!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sAv.%20Libertad%201024%2C%20Romeral!5e0!3m2!1ses!2scl!4v1234567890"
                       width="100%"
                       height="100%"
                       style={{ border: 0 }}
