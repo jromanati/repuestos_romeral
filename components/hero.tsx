@@ -243,11 +243,13 @@ export default function Hero({ products }: HeroProps) {
                 </div>
               )}
 
-              <div className="container mx-auto px-4 h-full flex items-start lg:items-center pt-16 lg:pt-0">
+              <Link href={slide.link} aria-label={slide.title} className="absolute inset-0 z-10" />
+
+              <div className="container mx-auto px-4 h-full flex items-end pb-28 pt-16 lg:items-center lg:pb-0 lg:pt-0">
                 <div className="grid grid-cols-1 gap-8 lg:gap-12 items-start lg:items-center w-full">
                   {/* Contenido de texto */}
                   <div
-                    className={`text-white space-y-6 z-10 ${
+                    className={`text-white space-y-6 z-10 pointer-events-none ${
                       slide.isOffer ? "flex flex-col justify-center h-full" : ""
                     }`}
                   >
@@ -271,31 +273,6 @@ export default function Hero({ products }: HeroProps) {
                       )} */}
                     </div>
 
-                    <div
-                      className={`flex flex-col sm:flex-row gap-4 ${
-                        slide.isOffer ? "items-start" : ""
-                      }
-                      ${isMobile && slide.isOffer ? "py-5" : ""}
-                      `}
-                    >
-                      <Link href={slide.link}>
-                        <Button
-                          size="lg"
-                          className="bg-red-600 hover:bg-red-700 hover:shadow-lg transform hover:scale-105 transition-all duration-200 px-8 py-4 text-lg"
-                        >
-                          {slide.cta || "Más Información"}
-                        </Button>
-                      </Link>
-                      <Link href="/catalog">
-                        <Button
-                          size="lg"
-                          variant="outline"
-                          className="bg-red-600 hover:bg-red-700 hover:shadow-lg transform hover:scale-105 transition-all duration-200 px-8 py-4 text-lg"
-                        >
-                          Ver todos los productos
-                        </Button>
-                      </Link>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -304,7 +281,7 @@ export default function Hero({ products }: HeroProps) {
         </div>
 
         {/* Controles del slider (puntos indicadores) */}
-        <div className="flex absolute bottom-6 left-1/2 transform -translate-x-1/2 space-x-2 md:space-x-3">
+        <div className="flex absolute bottom-6 left-1/2 transform -translate-x-1/2 space-x-2 md:space-x-3 z-20">
           {slides.map((_, index) => (
             <button
               key={index}
@@ -321,13 +298,13 @@ export default function Hero({ products }: HeroProps) {
         {/* Botones de navegación (solo desktop) */}
         <button
           onClick={prevSlide}
-          className="hidden md:flex absolute left-8 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-4 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110"
+          className="hidden md:flex absolute left-8 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-4 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110 z-20"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
         <button
           onClick={nextSlide}
-          className="hidden md:flex absolute right-8 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-4 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110"
+          className="hidden md:flex absolute right-8 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-4 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110 z-20"
         >
           <ChevronRight className="w-6 h-6" />
         </button>
