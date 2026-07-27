@@ -396,3 +396,22 @@ export const CHILE_COMMUNES_BY_REGION: Record<ChileRegionKey, string[]> = {
     "Putre",
   ],
 }
+
+export const CHILE_REGION_LABELS: Record<ChileRegionKey, string> = {
+  metropolitana: "Metropolitana",
+  valparaiso: "Valparaíso",
+  biobio: "Biobío",
+  araucania: "La Araucanía",
+  "los-lagos": "Los Lagos",
+  antofagasta: "Antofagasta",
+  atacama: "Atacama",
+  coquimbo: "Coquimbo",
+  ohiggins: "O'Higgins",
+  maule: "Maule",
+  nuble: "Ñuble",
+  "los-rios": "Los Ríos",
+  aysen: "Aysén",
+  magallanes: "Magallanes",
+  tarapaca: "Tarapacá",
+  arica: "Arica y Parinacota",
+}

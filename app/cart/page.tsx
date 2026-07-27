@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -16,7 +16,9 @@ import { useCart } from "@/hooks/use-cart"
 import { usePayment } from "@/hooks/use-payment"
 import type { PaymentMethod, CreateOrderRequest, ShippingAddress } from "@/types/payment"
 import { PaymentService } from "@/services/payment.service"
-import { CHILE_COMMUNES_BY_REGION } from "@/lib/chile-locations"
+import { ShippingCostsService } from "@/services/shipping-costs.service"
+import { AuthService } from "@/services/auth.service"
+import { CHILE_COMMUNES_BY_REGION, CHILE_REGION_LABELS, type ChileRegionKey } from "@/lib/chile-locations"
 import type {
   CreateOrderPayload, CreateShippingAddress, CreateOrderItem, CreateOrderResult
 } from "@/types/payment"
@@ -64,6 +66,7 @@ export default function CartPage() {
   })
   const [isProcessing, setIsProcessing] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState(false)
+  const [deliveryMethod, setDeliveryMethod] = useState<"delivery" | "pickup">("delivery")
 
   // Cargar métodos de pago disponibles
 
@@ -75,8 +78,124 @@ export default function CartPage() {
     }).format(price)
   }
 
-  const shippingCost = subtotal > 50000 ? 0 : 5990
+  const [shippingCost, setShippingCost] = useState(0)
+  const [shippingDiscount, setShippingDiscount] = useState(0)
+  const [shippingError, setShippingError] = useState<string | null>(null)
+  const [isCalculatingShipping, setIsCalculatingShipping] = useState(false)
+  const [shippingThreshold, setShippingThreshold] = useState(0)
+  const [shippingPercentage, setShippingPercentage] = useState(0)
+
   const finalTotal = subtotal + shippingCost
+
+  const shippingText = deliveryMethod === "pickup"
+    ? "GRATIS"
+    : orderData.region && orderData.city
+      ? isCalculatingShipping
+        ? "Calculando..."
+        : shippingError
+          ? "Por calcular"
+          : shippingCost === 0
+            ? "GRATIS"
+            : formatPrice(shippingCost)
+      : "Por calcular"
+
+  const isShippingResolved = deliveryMethod === "pickup" || (
+    orderData.region &&
+    orderData.city &&
+    !isCalculatingShipping &&
+    !shippingError
+  )
+
+  useEffect(() => {
+    if (deliveryMethod === "pickup") {
+      setShippingCost(0)
+      setShippingDiscount(0)
+      setShippingThreshold(0)
+      setShippingPercentage(0)
+      setShippingError(null)
+      return
+    }
+
+    const region = orderData.region as ChileRegionKey
+    const city = orderData.city
+    const total = subtotal
+
+    if (!region || !city || !total) {
+      setShippingCost(0)
+      setShippingDiscount(0)
+      setShippingThreshold(0)
+      setShippingPercentage(0)
+      setShippingError(null)
+      return
+    }
+
+    let cancelled = false
+
+    const calculate = async (isRetry = false) => {
+      if (cancelled) return
+      setIsCalculatingShipping(true)
+      setShippingError(null)
+
+      const token = await ShippingCostsService.ensureAuthenticated()
+      if (!token) {
+        if (!cancelled) {
+          setShippingCost(0)
+          setShippingDiscount(0)
+          setShippingThreshold(0)
+          setShippingPercentage(0)
+          setShippingError("No se pudo autenticar para calcular el envío")
+          setIsCalculatingShipping(false)
+        }
+        return
+      }
+
+      const result = await ShippingCostsService.calculate({
+        region: CHILE_REGION_LABELS[region] ?? region,
+        city,
+        order_total: total,
+      })
+
+      if (cancelled) return
+
+      if (result.success && result.data) {
+        setShippingCost(result.data.shipping_cost)
+        setShippingDiscount(result.data.discount_applied)
+        setShippingThreshold(result.data.discount_threshold)
+        setShippingPercentage(result.data.discount_percentage)
+      } else if (!isRetry && (result.error || "").toLowerCase().includes("401")) {
+        const auth = await AuthService.authenticate()
+        if (auth.success && auth.data) {
+          return calculate(true)
+        } else {
+          setShippingCost(0)
+          setShippingDiscount(0)
+          setShippingThreshold(0)
+          setShippingPercentage(0)
+          setShippingError("No se pudo autenticar para calcular el envío")
+        }
+      } else if ((result.error || "").toLowerCase().includes("404")) {
+        setShippingCost(0)
+        setShippingDiscount(0)
+        setShippingThreshold(0)
+        setShippingPercentage(0)
+        setShippingError("No hay envío disponible para esta comuna. Puedes cambiar a Retiro en tienda.")
+      } else {
+        setShippingCost(0)
+        setShippingDiscount(0)
+        setShippingThreshold(0)
+        setShippingPercentage(0)
+        setShippingError(result.error || "No se pudo calcular el envío")
+      }
+
+      if (!cancelled) setIsCalculatingShipping(false)
+    }
+
+    const timeoutId = setTimeout(() => calculate(), 300)
+    return () => {
+      cancelled = true
+      clearTimeout(timeoutId)
+    }
+  }, [deliveryMethod, orderData.region, orderData.city, subtotal])
 
   const handleInputChange = (field: string, value: string) => {
     setOrderData((prev) => ({ ...prev, [field]: value }))
@@ -304,52 +423,49 @@ export default function CartPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {items.map((item) => (
-                <div key={item.id} className="flex items-center space-x-4 p-4 border rounded-lg">
-                  <div className="relative w-20 h-20 flex-shrink-0">
-                    {/* <Image
-                      src={item.image || "/placeholder.svg"}
-                      alt={item.name}
-                      fill
-                      className="object-cover rounded"
-                    /> */}
-                    <img
-                      src={item.image || "/placeholder.svg"}
-                      alt={item.name}
-                      width={150}
-                      height={150}
-                      className="w-full h-20 object-cover"
-                    />
-                  </div>
+                <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg">
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
+                      <img
+                        src={item.image || "/placeholder.svg"}
+                        alt={item.name}
+                        width={150}
+                        height={150}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
 
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{item.name}</h3>
-                    <p className="text-lg font-bold text-blue-600">{formatPrice(item.price)}</p>
-                  </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{item.name}</h3>
+                      <p className="text-base sm:text-lg font-bold text-blue-600">{formatPrice(item.price)}</p>
+                    </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => updateQuantity(item._key, item.quantity - 1)}
-                    >
-                      <Minus className="w-4 h-4" />
-                    </Button>
-                    <span className="w-12 text-center font-medium">{item.quantity}</span>
-                    <Button variant="outline" size="sm" onClick={() => updateQuantity(item._key, item.quantity + 1)}>
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  <div className="text-right">
-                    <p className="font-bold">{formatPrice(item.price * item.quantity)}</p>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => removeItem(String(item.id))}
-                      className="text-red-600 hover:text-red-700 mt-1"
+                      onClick={() => removeItem(item._key)}
+                      className="text-red-600 hover:text-red-700 h-8 w-8 p-0 flex-shrink-0"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                     </Button>
+                  </div>
+
+                  <div className="flex items-center justify-between w-full sm:w-auto sm:justify-end gap-2">
+                    <div className="flex items-center space-x-1 sm:space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateQuantity(item._key, item.quantity - 1)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </Button>
+                      <span className="w-8 sm:w-12 text-center font-medium text-sm sm:text-base">{item.quantity}</span>
+                      <Button variant="outline" size="sm" onClick={() => updateQuantity(item._key, item.quantity + 1)} className="h-8 w-8 p-0">
+                        <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </Button>
+                    </div>
+                    <p className="font-bold text-sm sm:text-base">{formatPrice(item.price * item.quantity)}</p>
                   </div>
                 </div>
               ))}
@@ -359,35 +475,6 @@ export default function CartPage() {
 
         {/* Resumen y checkout */}
         <div className="space-y-6">
-          {/* Resumen del pedido */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Resumen del Pedido</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span>{formatPrice(subtotal)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="flex items-center">
-                  <Truck className="w-4 h-4 mr-2" />
-                  Envío
-                </span>
-                <span className={shippingCost === 0 ? "text-green-600 font-medium" : ""}>
-                  {shippingCost === 0 ? "GRATIS" : formatPrice(shippingCost)}
-                </span>
-              </div>
-              {subtotal < 50000 && (
-                <p className="text-sm text-gray-600">Agrega {formatPrice(50000 - subtotal)} más para envío gratis</p>
-              )}
-              <Separator />
-              <div className="flex justify-between text-lg font-bold">
-                <span>Total</span>
-                <span>{formatPrice(finalTotal)}</span>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Formulario de checkout */}
           <Card>
@@ -395,6 +482,19 @@ export default function CartPage() {
               <CardTitle>Información de Envío</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="deliveryMethod">Método de entrega *</Label>
+                <Select value={deliveryMethod} onValueChange={(value) => setDeliveryMethod(value as "delivery" | "pickup")}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="delivery">Envío a domicilio</SelectItem>
+                    <SelectItem value="pickup">Retiro en tienda</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="firstName">Nombre *</Label>
@@ -455,22 +555,11 @@ export default function CartPage() {
                       <SelectValue placeholder="Seleccionar región" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="metropolitana">Región Metropolitana</SelectItem>
-                      <SelectItem value="valparaiso">Valparaíso</SelectItem>
-                      <SelectItem value="biobio">Biobío</SelectItem>
-                      <SelectItem value="araucania">La Araucanía</SelectItem>
-                      <SelectItem value="los-lagos">Los Lagos</SelectItem>
-                      <SelectItem value="antofagasta">Antofagasta</SelectItem>
-                      <SelectItem value="atacama">Atacama</SelectItem>
-                      <SelectItem value="coquimbo">Coquimbo</SelectItem>
-                      <SelectItem value="ohiggins">O'Higgins</SelectItem>
-                      <SelectItem value="maule">Maule</SelectItem>
-                      <SelectItem value="nuble">Ñuble</SelectItem>
-                      <SelectItem value="los-rios">Los Ríos</SelectItem>
-                      <SelectItem value="aysen">Aysén</SelectItem>
-                      <SelectItem value="magallanes">Magallanes</SelectItem>
-                      <SelectItem value="tarapaca">Tarapacá</SelectItem>
-                      <SelectItem value="arica">Arica y Parinacota</SelectItem>
+                      {Object.entries(CHILE_REGION_LABELS).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>
+                          {label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -509,6 +598,47 @@ export default function CartPage() {
             </CardContent>
           </Card>
 
+          {/* Resumen del pedido */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Resumen del Pedido</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span>{formatPrice(subtotal)}</span>
+              </div>
+              {shippingDiscount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Descuento en envío</span>
+                  <span className="text-green-600">- {formatPrice(shippingDiscount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="flex items-center">
+                  <Truck className="w-4 h-4 mr-2" />
+                  {deliveryMethod === "pickup" ? "Retiro en Tienda" : "Envío"}
+                </span>
+                <span className={shippingText === "GRATIS" || shippingText === "Por calcular" ? "text-green-600 font-medium" : "font-medium"}>
+                  {shippingText}
+                </span>
+              </div>
+              {shippingPercentage > 0 && shippingThreshold > 0 && (
+                <p className="text-sm text-green-600">
+                  A partir de {formatPrice(shippingThreshold)} tienes un {shippingPercentage}% de descuento en el envío
+                </p>
+              )}
+              {shippingError && (
+                <p className="text-sm text-red-600">{shippingError}</p>
+              )}
+              <Separator />
+              <div className="flex justify-between text-lg font-bold">
+                <span>Total</span>
+                <span>{formatPrice(finalTotal)}</span>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Método de pago */}
           {/* <Card>
             <CardHeader>
@@ -541,7 +671,7 @@ export default function CartPage() {
             size="lg"
             className="w-full bg-blue-600 hover:bg-blue-700"
             onClick={handleConfirmOrder}
-            disabled={isProcessing || isLoading || isAuthenticating || !validateForm()}
+            disabled={isProcessing || isLoading || isAuthenticating || !validateForm() || !isShippingResolved}
           >
             {isAuthenticating
               ? "Autenticando..."
