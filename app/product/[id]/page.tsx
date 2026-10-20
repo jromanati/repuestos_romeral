@@ -84,9 +84,20 @@ export default function ProductPage() {
   const PLACEHOLDER = "/placeholder.svg?height=600&width=600"
   const { addItem, clear } = useCart()
 
+  // Si la imagen remota falla (404, URL inválida, mixed content, etc.)
+  // mostramos el placeholder en vez del icono de imagen rota.
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const el = e.currentTarget
+    if (el.dataset.fallbackApplied) return
+    el.dataset.fallbackApplied = "1"
+    el.src = PLACEHOLDER
+  }
+
   const imageUrls = useMemo(() => {
-    const primary = (typeof main_image === "string" && main_image.trim()) ? [main_image] : []
-    const gallery = Array.isArray(images) ? images.map(i => i?.url).filter(Boolean) : []
+    const normalize = (url?: string) =>
+      url && url.startsWith("http://res.cloudinary.com") ? url.replace("http://", "https://") : url
+    const primary = (typeof main_image === "string" && main_image.trim()) ? [normalize(main_image)] : []
+    const gallery = Array.isArray(images) ? images.map(i => normalize(i?.url)).filter(Boolean) : []
     const all = [...gallery]
     const dedup = Array.from(new Set(all))
     return dedup.length ? dedup : [PLACEHOLDER]
@@ -210,7 +221,7 @@ export default function ProductPage() {
         {/* Galería de imágenes */}
         <div className="space-y-4">
           <div className="relative aspect-square overflow-hidden rounded-lg border">
-            <img src={imageUrls[selectedImage]} alt={product.name} className="object-cover"/>
+            <img src={imageUrls[selectedImage]} alt={product.name} className="object-cover" onError={handleImageError}/>
             <div className="absolute top-4 left-4 flex flex-col space-y-2">
               {product.is_new && <Badge className="bg-green-600 text-white font-bold">
                 Nuevo</Badge>
@@ -238,6 +249,7 @@ export default function ProductPage() {
                   alt={product.name}
                   width={150}
                   height={150}
+                  onError={handleImageError}
                   className="w-full h-20 object-cover"
                 />
               </button>
@@ -491,6 +503,7 @@ export default function ProductPage() {
                     alt={relatedProduct.name}
                     width={300}
                     height={300}
+                    onError={handleImageError}
                     className="w-full h-48 object-cover rounded-t-lg"
                   />
                   <div className="p-6">

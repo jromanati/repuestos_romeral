@@ -23,6 +23,7 @@ type CatalogProduct = {
   main_image?: string | null
   images?: Array<{ url: string } | string>
   brand_data?: { name?: string }
+  imageDataUrl?: string
 }
 
 const formatPrice = (price: unknown) => {
@@ -39,6 +40,23 @@ const firstImageUrl = (images?: CatalogProduct["images"]): string | undefined =>
   if (!Array.isArray(images) || images.length === 0) return undefined
   const first = images[0]
   return typeof first === "string" ? first : first?.url
+}
+
+const resolveImageUrl = (p: CatalogProduct): string | undefined => {
+  const url =
+    (p?.main_image && String(p.main_image)) ||
+    (p?.image && String(p.image)) ||
+    firstImageUrl(p.images)
+  return url || undefined
+}
+
+// Cloudinary puede entregar webp/avif (f_auto o extensión en la URL) y
+// @react-pdf/image solo soporta jpeg/png -> forzamos f_jpg y extensión .jpg
+const toFetchableImageUrl = (url: string): string => {
+  if (!url.includes("res.cloudinary.com") || !url.includes("/image/upload/")) return url
+  return url
+    .replace(/\.(webp|avif|gif|bmp|tiff?|heic|heif)(\?|$)/i, ".jpg$2")
+    .replace("/image/upload/", "/image/upload/f_jpg/")
 }
 
 const getApiBaseUrl = () => {
@@ -82,6 +100,55 @@ const loadLogoDataUrl = async () => {
   const logoPath = path.join(process.cwd(), "public", "images", "logo_romeral_completo.png")
   const buf = await readFile(logoPath)
   return buildDataUrl("image/png", buf)
+}
+
+const sniffImageMime = (buf: Buffer): string | undefined => {
+  if (buf.length > 3 && buf[0] === 0xff && buf[1] === 0xd8) return "image/jpeg"
+  if (buf.length > 4 && buf[0] === 0x89 && buf[1] === 0x50) return "image/png"
+  return undefined
+}
+
+const loadImageDataUrl = async (url: string): Promise<string | undefined> => {
+  try {
+    const resp = await fetch(toFetchableImageUrl(url), {
+      cache: "no-store",
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!resp.ok) {
+      console.warn(`[catalog-pdf] imagen HTTP ${resp.status}: ${url}`)
+      return undefined
+    }
+
+    const contentType = (resp.headers.get("content-type") || "").split(";")[0].trim()
+    const buf = Buffer.from(await resp.arrayBuffer())
+    const mime = sniffImageMime(buf) || contentType
+
+    // @react-pdf/image solo soporta JPEG/PNG; otro formato romperia el render
+    if (mime !== "image/jpeg" && mime !== "image/png") {
+      console.warn(`[catalog-pdf] formato de imagen no soportado (${mime}): ${url}`)
+      return undefined
+    }
+
+    return buildDataUrl(mime, buf)
+  } catch {
+    console.warn(`[catalog-pdf] fallo descarga imagen: ${url}`)
+    return undefined
+  }
+}
+
+// Descarga las imagenes como data URLs en lotes para no saturar el origen
+// y para que react-pdf no dependa de la extension de la URL.
+const attachProductImages = async (products: CatalogProduct[]) => {
+  const CHUNK = 8
+  for (let i = 0; i < products.length; i += CHUNK) {
+    await Promise.all(
+      products.slice(i, i + CHUNK).map(async (p) => {
+        const url = resolveImageUrl(p)
+        if (!url) return
+        p.imageDataUrl = await loadImageDataUrl(url)
+      }),
+    )
+  }
 }
 
 const styles = StyleSheet.create({
@@ -210,11 +277,7 @@ function CatalogPdf({
   const h = React.createElement
 
   const tableRows = products.map((p, idx) => {
-    const img =
-      (p?.main_image && String(p.main_image)) ||
-      (p?.image && String(p.image)) ||
-      firstImageUrl(p.images) ||
-      ""
+    const img = typeof p?.imageDataUrl === "string" ? p.imageDataUrl : ""
 
     const name = String(p?.name || "Producto")
     const brand = p?.brand_data?.name ? String(p.brand_data.name) : ""
@@ -285,6 +348,7 @@ export async function GET(request: Request) {
     const authHeader = request.headers.get("authorization")
 
     const products = await fetchCatalog(authHeader)
+    await attachProductImages(products)
     const logoDataUrl = await loadLogoDataUrl()
 
     const generatedAt = new Date().toLocaleString("es-CL", {

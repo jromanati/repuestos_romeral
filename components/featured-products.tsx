@@ -71,8 +71,37 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
     return typeof first === "string" ? first : (first?.url || first?.secure_url || first?.path)
   }
 
+  const normalizeImageUrl = (url?: string) => {
+    // En producción (https) las URLs http:// de Cloudinary pueden bloquearse por mixed content
+    if (url && url.startsWith("http://res.cloudinary.com")) return url.replace("http://", "https://")
+    return url
+  }
+
+  const getImageCandidates = (product: any): string[] => {
+    const urls: (string | undefined)[] = [product.image, product.main_image]
+    if (Array.isArray(product.images)) {
+      for (const i of product.images) {
+        urls.push(typeof i === "string" ? i : (i?.url || i?.secure_url || i?.path))
+      }
+    }
+    return [...new Set(urls.filter((u): u is string => Boolean(u)))].map(u =>
+      u.startsWith("http://res.cloudinary.com") ? u.replace("http://", "https://") : u
+    )
+  }
+
+  // Si la imagen falla (red inestable hacia Cloudinary, 404, etc.) reintentamos
+  // con la siguiente imagen del producto; si todas fallan, placeholder.
+  const handleImageError = (product: any) => (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const el = e.currentTarget
+    const attempt = Number(el.dataset.attempt ?? "1")
+    const next = getImageCandidates(product)[attempt] ?? PLACEHOLDER
+    if (el.src === new URL(next, window.location.href).href) return
+    el.dataset.attempt = String(attempt + 1)
+    el.src = next
+  }
+
   const mapProduct = (product: any) => {
-    const image = product?.main_image || firstImageUrl(product?.images) || PLACEHOLDER
+    const image = normalizeImageUrl(product?.main_image || firstImageUrl(product?.images)) || PLACEHOLDER
     return {
       ...product,
       image,
@@ -104,6 +133,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
                       src={product.image || "/placeholder.svg"}
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={handleImageError(product)}
                     />
                   </div>
                   <Badge className={`absolute top-2 left-2 ${product.badgeColor} text-white`}>{product.badge}</Badge>

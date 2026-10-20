@@ -1,17 +1,16 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import ProductGrid from "@/components/product-grid"
 import { ProductService } from "@/services/product.service"
 import ProductFilters from "@/components/product-filters"
 import useSWR from 'swr'
-import { useProduct, useCatalogUpdates } from "@/hooks/use-products"
+import { useProduct } from "@/hooks/use-products"
 import { Filter, Grid3x3, List } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function CatalogPage() {
-  useCatalogUpdates();
   const searchParams = useSearchParams()
   const searchQuery = searchParams.get("search")?.toLowerCase() ?? ""
   const [showFilters, setShowFilters] = useState(false)
@@ -29,8 +28,8 @@ export default function CatalogPage() {
     sortBy: string
   }
 
+  const categoryFromUrl = searchParams.get("category")
   const [filters, setFilters] = useState<Filters>(() => {
-    const categoryFromUrl = searchParams.get("category")
     return {
       selectedCategories: categoryFromUrl ? [categoryFromUrl] : [],
       selectedBrands: [],
@@ -40,6 +39,23 @@ export default function CatalogPage() {
       sortBy: "name",
     }
   })
+
+  // Al navegar dentro de /catalog la página no se remonta: hay que
+  // re-sincronizar el filtro cuando cambia ?category= en la URL.
+  useEffect(() => {
+    setFilters((prev) => {
+      const next = categoryFromUrl ? [categoryFromUrl] : []
+      if (
+        prev.selectedCategories.length === next.length &&
+        prev.selectedCategories.every((c) => next.includes(c))
+      ) {
+        return prev
+      }
+      return { ...prev, selectedCategories: next }
+    })
+    setCurrentPage(1)
+  }, [categoryFromUrl])
+
   const PLACEHOLDER = "/placeholder.svg?height=300&width=300"
 
   const firstImageUrl = (images?: any[]): string | undefined => {
@@ -48,8 +64,14 @@ export default function CatalogPage() {
     return typeof first === "string" ? first : (first?.url || first?.secure_url || first?.path)
   }
 
+  const normalizeImageUrl = (url?: string) => {
+    // En producción (https) las URLs http:// de Cloudinary pueden bloquearse por mixed content
+    if (url && url.startsWith("http://res.cloudinary.com")) return url.replace("http://", "https://")
+    return url
+  }
+
   const mapProduct = (product: any) => {
-    const image = product?.main_image || firstImageUrl(product?.images) || PLACEHOLDER
+    const image = normalizeImageUrl(product?.main_image || firstImageUrl(product?.images)) || PLACEHOLDER
     return {
       ...product,
       image,
@@ -76,7 +98,7 @@ export default function CatalogPage() {
     }
   }
   const { data, isLoading, error, mutate } = useSWR<{ products: any[]; categories: any[]; brands: any[] }>(
-    typeof getProducts === "function" ? "catalog" : null,
+    typeof getProducts === "function" ? "catalog-page" : null,
     fetchProducts,
     {
       revalidateOnFocus: false,

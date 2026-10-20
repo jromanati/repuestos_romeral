@@ -6,7 +6,6 @@ import Header from "@/components/header"
 import Footer from "@/components/footer"
 import WhatsAppButton from "@/components/whatsapp-button"
 import { CartProvider } from "@/contexts/cart-context"
-import { WebSocketProvider } from "@/components/providers/websocket-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 

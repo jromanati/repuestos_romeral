@@ -35,6 +35,33 @@ interface ProductGridProps {
   viewMode?: "grid" | "list"
 }
 
+const PLACEHOLDER = "/placeholder.svg?height=300&width=300"
+
+// Todas las imágenes disponibles del producto (main_image e images[] son
+// archivos distintos en Cloudinary). Normaliza http->https por mixed content.
+const getImageCandidates = (product: any): string[] => {
+  const urls: (string | undefined)[] = [product.image, product.main_image]
+  if (Array.isArray(product.images)) {
+    for (const i of product.images) {
+      urls.push(typeof i === "string" ? i : (i?.url || i?.secure_url || i?.path))
+    }
+  }
+  return [...new Set(urls.filter((u): u is string => Boolean(u)))].map(u =>
+    u.startsWith("http://res.cloudinary.com") ? u.replace("http://", "https://") : u
+  )
+}
+
+// Si la imagen falla (red inestable hacia Cloudinary, 404, mixed content, etc.)
+// reintentamos con la siguiente imagen del producto; si todas fallan, placeholder.
+const handleImageError = (product: any) => (e: React.SyntheticEvent<HTMLImageElement>) => {
+  const el = e.currentTarget
+  const attempt = Number(el.dataset.attempt ?? "1") // candidates[0] ya falló (es el src actual)
+  const next = getImageCandidates(product)[attempt] ?? PLACEHOLDER
+  if (el.src === new URL(next, window.location.href).href) return
+  el.dataset.attempt = String(attempt + 1)
+  el.src = next
+}
+
 export default function ProductGrid({ products, viewMode = "grid" }: ProductGridProps) {
   const { addItem } = useCart()
 
@@ -71,7 +98,7 @@ export default function ProductGrid({ products, viewMode = "grid" }: ProductGrid
             <CardContent className="p-0">
               <div className="flex flex-col sm:flex-row">
                 <div className="relative w-full sm:w-48 h-48 flex-shrink-0">
-                  <img src={product.image} alt={product.name} className="object-cover rounded-l-lg"/>
+                  <img src={getImageCandidates(product)[0] ?? PLACEHOLDER} alt={product.name} loading="lazy" decoding="async" className="object-cover rounded-l-lg" onError={handleImageError(product)}/>
                   {!product.in_stock && (
                     <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-l-lg">
                       <span className="text-white font-semibold">Agotado</span>
@@ -150,7 +177,7 @@ export default function ProductGrid({ products, viewMode = "grid" }: ProductGrid
           <CardContent className="p-0">
             <div className="relative">
               <div className="relative h-40 sm:h-56 lg:h-64 overflow-hidden rounded-t-lg">
-                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+                <img src={getImageCandidates(product)[0] ?? PLACEHOLDER} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={handleImageError(product)}/>
                 {!product.in_stock && (
                   <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                     <span className="text-white font-semibold">Agotado</span>
